@@ -34,16 +34,10 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
     {
         $message = '';
         $posts = json_decode($request->getContent(), true);
-        //  remove
-        if (!empty($posts) && $posts['action'] == 'removeImage') {
-            $url = '';
-            if (isset($posts['state']['url'])) {
-                $url = $posts['state']['url'];
-            }
-            if (isset($posts['state']['imgs']['url'])) {
-                $url = $posts['state']['imgs']['url'];
-            }
 
+        // remove
+        if (!empty($posts) && ($posts['action'] ?? '') === 'removeImage') {
+            $url = $posts['state']['url'] ?? ($posts['state']['imgs']['url'] ?? '');
             $message = \Context::getContext()->getTranslator()->trans('Image removed successfully', [], 'Modules.Prettyblocks.Admin');
             $path = \HelperBuilder::pathFormattedFromUrl($url);
             $unlink = @unlink($path);
@@ -58,74 +52,119 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
                 'success' => $unlink,
             ]);
         }
-        //  upload
-        $file = $_FILES['file'];
-        $uploaded = false;
+
+        // upload
+        if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
+            return (new JsonResponse())->setData([
+                'uploaded' => false,
+                'message'  => \Context::getContext()->getTranslator()->trans('Please provide a file.', [], 'Modules.Prettyblocks.Admin'),
+            ]);
+        }
+
+        $file      = $_FILES['file'];
+        $uploaded  = false;
         $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        $imgs = [];
-        if (in_array($extension, \Module::getInstanceByName('prettyblocks')->valid_types)) {
-            $md5ContentSuffix = '';
-            $content = \Tools::file_get_contents($file['tmp_name']);
+        $imgs      = [];
 
-            if ($content !== false) {
-                $md5ContentSuffix = '_' . md5($content);
-            }
-            
-            // can upload
-            $new_name = \Tools::str2url(pathinfo($file['name'], PATHINFO_FILENAME) . $md5ContentSuffix);
+        $module = \Module::getInstanceByName('prettyblocks');
+        if (!in_array($extension, $module->valid_types, true)) {
+            return (new JsonResponse())->setData([
+                'uploaded' => false,
+                'message'  => \Context::getContext()->getTranslator()->trans('Invalid file type.', [], 'Modules.Prettyblocks.Admin'),
+            ]);
+        }
 
-            // Most OS have a limit of 255 characters for file names
-            $new_name = \Tools::substr($new_name, 0, 255 - \Tools::strlen('.' . $extension));
-            
-            $path = '$/modules/prettyblocks/views/images/';
-            if (\Tools::getIsset('path')) {
-                $path = pSQL(\Tools::getValue('path'));
-            }
-            $upload_dir = \HelperBuilder::pathFormattedFromString($path);
-            if (move_uploaded_file($file['tmp_name'], $upload_dir . $new_name . '.' . $extension)) {
-                $uploaded = true;
+        // Nom « safe » + suffixe de contenu
+        $md5ContentSuffix = '';
+        $content = @file_get_contents($file['tmp_name']);
+        if ($content !== false) {
+            $md5ContentSuffix = '_' . md5($content);
+        }
+        $new_name = \Tools::str2url(pathinfo($file['name'], PATHINFO_FILENAME) . $md5ContentSuffix);
+        $new_name = \Tools::substr($new_name, 0, 255 - \Tools::strlen('.' . $extension)); // limite FS
 
-                $myurl = \HelperBuilder::pathFormattedToUrl($path) . '/' . $new_name . '.' . $extension;
-                $imgs = [
-                    'url' => $myurl,
-                    'extension' => pathinfo($myurl, PATHINFO_EXTENSION),
-                    'mediatype' => \HelperBuilder::getMediaTypeForExtension(pathinfo($myurl, PATHINFO_EXTENSION)),
-                    'filename' => pathinfo($myurl, PATHINFO_BASENAME),
-                ];
-            } else {
-                switch ($file['error']) {
-                    case UPLOAD_ERR_INI_SIZE:
-                        $imgs['error'] = \Context::getContext()->getTranslator()->trans('The uploaded file exceeds the upload_max_filesize directive.', [], 'Modules.Prettyblocks.Admin');
-                        break;
-                    case UPLOAD_ERR_FORM_SIZE:
-                        $imgs['error'] = \Context::getContext()->getTranslator()->trans('The uploaded file exceeds the post_max_size directive.', [], 'Modules.Prettyblocks.Admin');
-                        break;
-                        break;
-                    case UPLOAD_ERR_PARTIAL:
-                        $imgs['error'] = \Context::getContext()->getTranslator()->trans('The uploaded file was only partially uploaded.', [], 'Modules.Prettyblocks.Admin');
-                        break;
-                        break;
-                    case UPLOAD_ERR_NO_FILE:
-                        $imgs['error'] = \Context::getContext()->getTranslator()->trans('Please provide a file.', [], 'Modules.Prettyblocks.Admin');
-                        break;
-                        break;
-                }
-                $message .= $imgs['error'];
+        // --- Résolution et sécurisation du chemin cible ---
+        // Valeur par défaut (dans le module)
+        $defaultRelativePath = 'modules/prettyblocks/views/images';
+
+        // Optionnellement, un path peut être fourni
+        $rawPath = (string) \Tools::getValue('path', '');
+        $rawPath = trim($rawPath);
+
+        // Normalisation : on enlève les choses dangereuses et on force un chemin RELATIF
+        // - pas de schémas, pas de .., pas de backslashes
+        // - on retire tout préfixe '$/' historique
+        $normalizedRelative = $defaultRelativePath;
+        if ($rawPath !== '') {
+            $candidate = str_replace(['\\'], '/', $rawPath);
+            $candidate = preg_replace('#^\$\/?#', '', $candidate);    // retire '$/' s'il existe
+            $candidate = ltrim($candidate, '/');                      // force relatif
+            if (strpos($candidate, '..') !== false) {
+                // tentative d'évasion -> on ignore et on garde par défaut
+                $candidate = $defaultRelativePath;
             }
+            $normalizedRelative = rtrim($candidate, '/');
+        }
+
+        // On fabrique un chemin ABSOLU sous _PS_ROOT_DIR_
+        $upload_dir = _PS_ROOT_DIR_ . '/' . $normalizedRelative . '/';
+
+        // Vérifie que le chemin final reste bien SOUS _PS_ROOT_DIR_ (open_basedir OK)
+        $realRoot  = realpath(_PS_ROOT_DIR_);
+        if (!is_dir($upload_dir)) {
+            @mkdir($upload_dir, 0755, true);
+        }
+        $realDest = realpath($upload_dir);
+        if ($realRoot === false || $realDest === false || strpos($realDest, $realRoot) !== 0) {
+            return (new JsonResponse())->setData([
+                'uploaded' => false,
+                'message'  => \Context::getContext()->getTranslator()->trans('Invalid destination path.', [], 'Modules.Prettyblocks.Admin'),
+            ]);
+        }
+
+        // Déplacement
+        $finalPath = $upload_dir . $new_name . '.' . $extension;
+        if (@move_uploaded_file($file['tmp_name'], $finalPath)) {
+            $uploaded = true;
+
+            // URL publique
+            // On fabrique l’URL à partir du chemin RELATIF depuis la racine PS
+            $publicRelative = $normalizedRelative . '/' . $new_name . '.' . $extension;
+            $base = \Tools::getShopDomainSsl(true) . \Context::getContext()->shop->physical_uri;
+            $myurl = rtrim($base, '/') . '/' . ltrim($publicRelative, '/');
+
+            $imgs = [
+                'url'        => $myurl,
+                'extension'  => pathinfo($myurl, PATHINFO_EXTENSION),
+                'mediatype'  => \HelperBuilder::getMediaTypeForExtension(pathinfo($myurl, PATHINFO_EXTENSION)),
+                'filename'   => pathinfo($myurl, PATHINFO_BASENAME),
+            ];
+        } else {
+            switch ((int) ($file['error'] ?? UPLOAD_ERR_NO_FILE)) {
+                case UPLOAD_ERR_INI_SIZE:
+                    $imgs['error'] = \Context::getContext()->getTranslator()->trans('The uploaded file exceeds the upload_max_filesize directive.', [], 'Modules.Prettyblocks.Admin');
+                    break;
+                case UPLOAD_ERR_FORM_SIZE:
+                    $imgs['error'] = \Context::getContext()->getTranslator()->trans('The uploaded file exceeds the post_max_size directive.', [], 'Modules.Prettyblocks.Admin');
+                    break;
+                case UPLOAD_ERR_PARTIAL:
+                    $imgs['error'] = \Context::getContext()->getTranslator()->trans('The uploaded file was only partially uploaded.', [], 'Modules.Prettyblocks.Admin');
+                    break;
+                case UPLOAD_ERR_NO_FILE:
+                default:
+                    $imgs['error'] = \Context::getContext()->getTranslator()->trans('Please provide a file.', [], 'Modules.Prettyblocks.Admin');
+                    break;
+            }
+            $message .= $imgs['error'];
         }
 
         return (new JsonResponse())->setData([
-            'file' => $request->files,
-            'test' => json_decode(\Tools::file_get_contents('php://input'), true),
-            'tools' => \Tools::getAllValues(),
-            'path_request' => \Tools::getValue('path'),
-            'path' => \HelperBuilder::pathFormattedFromString(\Tools::getValue('path')),
-            'request' => $posts,
-            'uploaded' => $uploaded,
-            'ext' => $extension,
-            'imgs' => $imgs,
-            'files' => $_FILES['file'],
-            'message' => $message,
+            'uploaded'      => $uploaded,
+            'imgs'          => $imgs,
+            'message'       => $message,
+            'files'         => $_FILES['file'],
+            'path_request'  => $rawPath,
+            'resolved_path' => $upload_dir,
         ]);
     }
 
