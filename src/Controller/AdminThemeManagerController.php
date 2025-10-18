@@ -332,6 +332,7 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
                 'duplicate_state_error' => $translator->trans('An error occurred while duplicating the element', [], 'Modules.Prettyblocks.Admin'),
                 'get_pro' => $translator->trans('Get Pro Blocks', [], 'Modules.Prettyblocks.Admin'),
                 'search_zone' => $translator->trans('Search zone', [], 'Modules.Prettyblocks.Admin'),
+                'no_matching_zones' => $translator->trans('No zones match your search', [], 'Modules.Prettyblocks.Admin'),
                 'alert_message' => $translator->trans('Careful, %number% users are on this page.', ['%number%' => '{{ number }}'], 'Modules.Prettyblocks.Admin'),
             ],
             'security_app' => [
