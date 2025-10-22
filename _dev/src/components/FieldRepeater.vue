@@ -201,6 +201,9 @@ const toolbarOptions = [
       :title="f.label"
       type="number"
       :placeholder="f.placeholder"
+      :min="f.min ?? null"
+      :max="f.max ?? null"
+      :step="f.step ?? null"
       :input-props="buildInputProps()"
     />
     <div v-if="f.type == 'color'">
