@@ -240,6 +240,39 @@ class PrettyBlocksAjaxModuleFrontController extends ModuleFrontController
         }
     }
 
+    public function displayAjaxduplicateSubState()
+    {
+        $formattedID = pSQL(Tools::getValue('formattedID'));
+        $ids = explode('-', $formattedID);
+        if (count($ids) < 2) {
+            exit(json_encode([
+                'success' => false,
+                'message' => $this->translator->trans('An error occurred while duplicating the element', [], 'Modules.Prettyblocks.Admin'),
+            ]));
+        }
+
+        $id_block = (int) $ids[0];
+        $substate_key = (int) $ids[1];
+        $id_lang = (int) Tools::getValue('ctx_id_lang');
+        $id_shop = (int) Tools::getValue('ctx_id_shop');
+
+        $result = PrettyBlocksModel::duplicateRepeaterState($id_block, $substate_key, $id_lang, $id_shop);
+
+        if ($result['success']) {
+            exit(json_encode([
+                'success' => true,
+                'new_key' => $result['new_key'],
+                'state' => $result['state'],
+                'message' => $this->translator->trans('Element added successfully', [], 'Modules.Prettyblocks.Admin'),
+            ]));
+        }
+
+        exit(json_encode([
+            'success' => false,
+            'message' => $this->translator->trans('An error occurred while duplicating the element', [], 'Modules.Prettyblocks.Admin'),
+        ]));
+    }
+
     // remove element
     public function displayAjaxremoveState()
     {

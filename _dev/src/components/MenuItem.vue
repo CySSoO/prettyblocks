@@ -47,6 +47,35 @@ const removeSubState = () => {
 
 }
 
+const duplicateSubState = () => {
+  let context = prettyBlocksContext.psContext
+  const params = {
+    formattedID: props.id,
+    action: 'duplicateSubState',
+    ajax: true,
+    ctx_id_lang: context.id_lang,
+    ctx_id_shop: context.id_shop,
+    ajax_token: security_app.ajax_token
+  }
+  HttpClient.get(ajax_urls.state, params)
+    .then((data) => {
+      if (data.success) {
+        if (props.element.need_reload) {
+          prettyBlocksContext.reloadIframe()
+        } else {
+          prettyBlocksContext.sendPrettyBlocksEvents('reloadBlock', {
+            id_prettyblocks: props.element.id_prettyblocks
+          })
+        }
+        prettyBlocksContext.initStates()
+        prettyBlocksContext.displayMessage(trans('element_added'))
+      } else {
+        prettyBlocksContext.displayError(trans('duplicate_state_error'))
+      }
+    })
+    .catch(() => prettyBlocksContext.displayError(trans('duplicate_state_error')))
+}
+
 const removeState = async () => {
   if (confirm('Voulez vous supprimer l\'element ?')) {
     const params = {
@@ -128,9 +157,10 @@ const highLightBlock = () => {
     <!-- extra actions : eye and drag buttons -->
     <div class="menu-item-actions w-0 overflow-hidden flex justify-end items-center">
       <!-- {{ props.is_child }} -->
-      
+
       <ButtonLight class="handle" v-if="props.config" icon="CogIcon" />
       <ButtonLight class="handle" v-if="props.is_child" @click.prevent="removeSubState" icon="TrashIcon" />
+      <ButtonLight class="handle" v-if="props.is_child" @click.prevent="duplicateSubState" icon="DocumentDuplicateIcon" />
       <ButtonLight class="handle" v-if="!props.is_child" @click.prevent="removeState" icon="TrashIcon" />
       <ButtonLight v-if="!props.is_child" class="handle cursor-move" @click="openModal" icon="DocumentDuplicateIcon" />
       <LanguageModal v-if="showModal" :id_prettyblocks="props.element.id_prettyblocks" :languages="languages" @closeModal="closeModal" @selectLanguages="selectLanguages" />
