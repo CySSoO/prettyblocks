@@ -837,53 +837,6 @@ class PrettyBlocksModel extends ObjectModel
     }
 
     /**
-     * Duplicate a repeater state within the same block.
-     *
-     * @param int $idPrettyblocks
-     * @param int $substateKey
-     * @param int $idLang
-     * @param int $idShop
-     *
-     * @return array
-     */
-    public static function duplicateRepeaterState($idPrettyblocks, $substateKey, $idLang, $idShop)
-    {
-        $model = new self($idPrettyblocks, $idLang, $idShop);
-        $stateDb = json_decode($model->state, true);
-
-        if (!is_array($stateDb)) {
-            $stateDb = [];
-        }
-
-        if (!array_key_exists($substateKey, $stateDb)) {
-            return [
-                'success' => false,
-                'error' => 'missing_substate',
-            ];
-        }
-
-        $keys = array_map('intval', array_keys($stateDb));
-        $maxKey = empty($keys) ? 0 : max($keys);
-        $newKey = $maxKey + 1;
-        $stateDb[$newKey] = $stateDb[$substateKey];
-
-        $model->state = json_encode($stateDb);
-
-        if ($model->save()) {
-            return [
-                'success' => true,
-                'new_key' => $newKey,
-                'state' => $stateDb[$newKey],
-            ];
-        }
-
-        return [
-            'success' => false,
-            'error' => 'save_failed',
-        ];
-    }
-
-    /**
      * Format the front result for MagicField
      * ex {id} - {name} will return 2 - Home for cat id 2
      *

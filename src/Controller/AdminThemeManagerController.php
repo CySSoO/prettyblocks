@@ -458,38 +458,6 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
             }
         }
 
-        if ($action == 'duplicateSubState') {
-            $formattedID = (string) $request->query->get('formattedID');
-            $ids = explode('-', $formattedID);
-            if (count($ids) < 2) {
-                exit(json_encode([
-                    'success' => false,
-                    'message' => $this->getTranslatorService()->trans('An error occurred while duplicating the element', [], 'Modules.Prettyblocks.Admin'),
-                ]));
-            }
-
-            $id_block = (int) $ids[0];
-            $substate_key = (int) $ids[1];
-            $id_lang = (int) $request->get('ctx_id_lang');
-            $id_shop = (int) $request->get('ctx_id_shop');
-
-            $result = \PrettyBlocksModel::duplicateRepeaterState($id_block, $substate_key, $id_lang, $id_shop);
-
-            if ($result['success']) {
-                exit(json_encode([
-                    'success' => true,
-                    'new_key' => $result['new_key'],
-                    'state' => $result['state'],
-                    'message' => $this->getTranslatorService()->trans('Element added successfully', [], 'Modules.Prettyblocks.Admin'),
-                ]));
-            }
-
-            exit(json_encode([
-                'success' => false,
-                'message' => $this->getTranslatorService()->trans('An error occurred while duplicating the element', [], 'Modules.Prettyblocks.Admin'),
-            ]));
-        }
-
         // remove element
         if ($action == 'removeState') {
             $id_prettyblocks = (string) $request->query->get('id_prettyblocks');
