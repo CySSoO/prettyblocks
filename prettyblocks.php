@@ -73,7 +73,7 @@ class PrettyBlocks extends Module implements WidgetInterface
     {
         $this->name = 'prettyblocks';
         $this->tab = 'administration';
-        $this->version = '3.2.0';
+        $this->version = '3.2.1';
         $this->author = 'PrestaSafe';
         $this->need_instance = 1;
         $this->js_path = $this->_path . 'views/js/';
@@ -194,9 +194,10 @@ class PrettyBlocks extends Module implements WidgetInterface
             `code` varchar(255) DEFAULT NULL,
             `template` longtext DEFAULT NULL,
             `default_params` longtext DEFAULT NULL,
-            `name` varchar(255) DEFAULT NULL,   
+            `name` varchar(255) DEFAULT NULL,
             `zone_name` varchar(255) DEFAULT NULL,
             `position` int(11) DEFAULT 0,
+            `is_temporary` TINYINT(1) NOT NULL DEFAULT 0,
             `date_add` datetime DEFAULT NULL,
             `date_upd` datetime DEFAULT NULL,
             `id_shop` int(11) DEFAULT NULL,

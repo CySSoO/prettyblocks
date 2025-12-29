@@ -11,7 +11,7 @@ use PrestaSafe\PrettyBlocks\Core\FieldCore;
 
 final class LayoutApplier
 {
-    public static function apply(array $preset, string $hookName, int $idLang, int $idShop): array
+    public static function apply(array $preset, string $hookName, int $idLang, int $idShop, bool $temporary = false): array
     {
         $created = [];
 
@@ -41,6 +41,7 @@ final class LayoutApplier
             $model->id_shop = $idShop;
             $model->id_lang = $idLang;
             $model->position = ++$currentPosition;
+            $model->is_temporary = $temporary ? 1 : 0;
 
             $model->config = json_encode(self::buildConfig($definition, $blockPreset['defaults'] ?? []), true);
             $model->state = json_encode(self::buildState($definition, $blockPreset['defaults']['repeater'] ?? []), true);
@@ -55,7 +56,7 @@ final class LayoutApplier
             }
         }
 
-        self::refreshHookPositions($hookName, $idLang, $idShop);
+        self::refreshHookPositions($hookName, $idLang, $idShop, $temporary);
         Cache::clean('prettyblocks');
         Module::getInstanceByName('prettyblocks')->clearCache('*');
 
@@ -140,7 +141,7 @@ final class LayoutApplier
         Db::getInstance()->insert('prettyblocks_lang', $data);
     }
 
-    private static function refreshHookPositions(string $hookName, int $idLang, int $idShop): void
+    public static function refreshHookPositions(string $hookName, int $idLang, int $idShop, bool $includeTemporary = false): void
     {
         $db = Db::getInstance();
         $rows = $db->executeS(
@@ -148,6 +149,7 @@ final class LayoutApplier
             " WHERE zone_name = '" . pSQL($hookName) . "'" .
             ' AND id_lang = ' . (int) $idLang .
             ' AND id_shop = ' . (int) $idShop .
+            ($includeTemporary ? '' : ' AND is_temporary = 0') .
             ' ORDER BY position, id_prettyblocks'
         );
 
