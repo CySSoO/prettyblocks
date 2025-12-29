@@ -25,6 +25,7 @@ use PrestaSafe\PrettyBlocks\DataPersister\ConnectedEmployeeDataPersister;
 use PrestaSafe\PrettyBlocks\DataPersister\LayoutPresetDataPersister;
 use PrestaSafe\PrettyBlocks\DataProvider\ConnectedEmployeeDataProvider;
 use PrestaSafe\PrettyBlocks\DataProvider\LayoutPresetDataProvider;
+use PrestaSafe\PrettyBlocks\Core\Layout\LayoutCatalog;
 use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -458,6 +459,7 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
 
         return (new JsonResponse())->setData([
             'layouts' => $this->getLayoutsFromRegisteredBlocks(),
+            'catalog' => LayoutCatalog::getAll(),
             'presets' => LayoutPresetDataProvider::getAll($idLang, $idShop),
             'selected' => $selected,
             'hooks' => $this->getAvailableHooksList(),
