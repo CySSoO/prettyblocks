@@ -48,6 +48,13 @@ class PrettyBlocks extends Module implements WidgetInterface
             'visible' => true,
             'parent_class_name' => 'IMPROVE',
         ],
+        [
+            'name' => 'Layout presets',
+            'class_name' => 'AdminThemeManagerControllerLayoutPresets',
+            'visible' => true,
+            'parent_class_name' => 'AdminThemeManagerController',
+            'route_name' => 'prettyblocks_layout_presets',
+        ],
     ];
 
     public $hooks = [
