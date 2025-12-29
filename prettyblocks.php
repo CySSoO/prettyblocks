@@ -50,7 +50,7 @@ class PrettyBlocks extends Module implements WidgetInterface
         ],
         [
             'name' => 'Layout presets',
-            'class_name' => 'AdminThemeManagerControllerLayoutPresets',
+            'class_name' => 'AdminLayoutPresetController',
             'visible' => true,
             'parent_class_name' => 'AdminThemeManagerController',
             'route_name' => 'prettyblocks_layout_presets',
