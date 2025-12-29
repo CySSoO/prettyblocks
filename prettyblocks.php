@@ -211,6 +211,7 @@ class PrettyBlocks extends Module implements WidgetInterface
         }
         $isOk &= $this->makeSettingsTable();
         $isOk &= $this->makeConnectedEmployee();
+        $isOk &= $this->makeLayoutPresetTable();
 
         return $isOk;
     }
@@ -230,6 +231,23 @@ class PrettyBlocks extends Module implements WidgetInterface
             `last_update` TIMESTAMP NOT NULL,
             PRIMARY KEY (`id_edit`)
             ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
+
+        return Db::getInstance()->execute($sql);
+    }
+
+    public function makeLayoutPresetTable()
+    {
+        $sql = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'prettyblocks_layout_presets` (
+            `id_prettyblocks_layout_preset` int(11) unsigned NOT NULL AUTO_INCREMENT,
+            `id_lang` int(11) NOT NULL,
+            `id_shop` int(11) NOT NULL,
+            `hook_name` varchar(255) NOT NULL,
+            `preset` varchar(255) NOT NULL,
+            `date_add` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            `date_upd` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY `hook_context` (`id_lang`,`id_shop`,`hook_name`),
+            PRIMARY KEY (`id_prettyblocks_layout_preset`)
+          ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4;';
 
         return Db::getInstance()->execute($sql);
     }
@@ -260,6 +278,7 @@ class PrettyBlocks extends Module implements WidgetInterface
         $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_lang`';
         $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_settings`';
         $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_connected_employee`';
+        $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_layout_presets`';
 
         $isOk = true;
         foreach ($db as $sql) {
