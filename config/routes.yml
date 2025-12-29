@@ -2,7 +2,7 @@ admin_prettyblocks:
   path: prettyblocks/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::indexAction'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::indexAction'
     _legacy_controller: AdminThemeManagerController
     _legacy_link: AdminThemeManagerController
 # route generator (for opening custom page in prettyblocks)
@@ -11,7 +11,7 @@ prettyblocks_route_generator:
   path: prettyblocks/route_generator/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::routeGeneratorAction'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::routeGeneratorAction'
     _legacy_controller: AdminThemeManagerControllerRouteGenerator
     _legacy_link: AdminThemeManagerControllerRouteGenerator
 
@@ -19,7 +19,7 @@ prettyblocks_block_render:
   path: prettyblocks/block/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::renderBlockAction'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::renderBlockAction'
     _legacy_controller: AdminThemeManagerController
     _legacy_link: AdminThemeManagerController
 
@@ -28,7 +28,7 @@ prettyblocks_api:
   path: prettyblocks/api/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::testAction'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::testAction'
     _legacy_controller: AdminThemeManagerController
     _legacy_link: AdminThemeManagerController
 
@@ -37,7 +37,7 @@ prettyblocks_collection:
   path: prettyblocks/collection/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::getCollectionAction'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::getCollectionAction'
     _legacy_controller: AdminThemeManagerControllerGetCollectionAction
     _legacy_link: AdminThemeManagerControllerGetCollectionAction
 
@@ -47,9 +47,26 @@ prettyblocks_upload:
   path: prettyblocks/upload/
   methods: [POST,GET]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::uploadAction'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::uploadAction'
     _legacy_controller: AdminThemeManagerControllerUploadAction
     _legacy_link: AdminThemeManagerControllerUploadAction
+
+# Layout presets
+prettyblocks_layout_presets:
+  path: prettyblocks/layout_presets/
+  methods: [GET,POST]
+  defaults:
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::getLayoutPresetsAction'
+    _legacy_controller: AdminThemeManagerControllerLayoutPresets
+    _legacy_link: AdminThemeManagerControllerLayoutPresets
+
+prettyblocks_layout_presets_save:
+  path: prettyblocks/layout_presets/save
+  methods: [POST]
+  defaults:
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::saveLayoutPresetAction'
+    _legacy_controller: AdminThemeManagerControllerSaveLayoutPreset
+    _legacy_link: AdminThemeManagerControllerSaveLayoutPreset
 
 
 # get block state
@@ -57,7 +74,7 @@ prettyblocks_api_get_state:
   path: prettyblocks/get_state/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::getState'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::getState'
     _legacy_controller: AdminThemeManagerController
     _legacy_link: AdminThemeManagerController
 
@@ -66,7 +83,7 @@ prettyblocks_api_get_blocks_available:
   path: prettyblocks/get_blocks_available/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::getBlocksAvailableAction'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::getBlocksAvailableAction'
     _legacy_controller: AdminThemeManagerController
     _legacy_link: AdminThemeManagerController
 
@@ -76,7 +93,7 @@ prettyblocks_homesimulator:
   path: prettyblocks/homesimulator/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::homeSimulator'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::homeSimulator'
     _legacy_controller: AdminThemeManagerControllerHomeSimulator
     _legacy_link: AdminThemeManagerControllerHomeSimulator
 
@@ -85,7 +102,7 @@ admin_prettyblocks_test:
   path: prettyblocks/test/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::testAction'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::testAction'
     _legacy_controller: AdminThemeManagerController
     _legacy_link: AdminThemeManagerController
 
@@ -95,7 +112,7 @@ prettyblocks_theme_settings:
   path: prettyblocks/get_theme_settings/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::getSettingsAction'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::getSettingsAction'
     _legacy_controller: AdminThemeManagerController
     _legacy_link: AdminThemeManagerController
 
@@ -103,6 +120,6 @@ prettyblocks_get_connected_employees:
   path: prettyblocks/get_connected_employees/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::getConnectedEmployeesAction'
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::getConnectedEmployeesAction'
     _legacy_controller: AdminThemeManagerController
     _legacy_link: AdminThemeManagerController

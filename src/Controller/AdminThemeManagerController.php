@@ -22,7 +22,9 @@ namespace PrestaSafe\PrettyBlocks\Controller;
 
 // use Doctrine\Common\Cache\CacheProvider;
 use PrestaSafe\PrettyBlocks\DataPersister\ConnectedEmployeeDataPersister;
+use PrestaSafe\PrettyBlocks\DataPersister\LayoutPresetDataPersister;
 use PrestaSafe\PrettyBlocks\DataProvider\ConnectedEmployeeDataProvider;
+use PrestaSafe\PrettyBlocks\DataProvider\LayoutPresetDataProvider;
 use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -221,6 +223,52 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
         return $url;
     }
 
+    private function getAvailableHooksList()
+    {
+        $hooks = \Hook::getHooks(true, false);
+
+        return array_map(function ($hook) {
+            return [
+                'id_hook' => (int) $hook['id_hook'],
+                'name' => $hook['name'],
+                'title' => $hook['title'] ?? $hook['name'],
+            ];
+        }, $hooks);
+    }
+
+    private function getLayoutsFromRegisteredBlocks(): array
+    {
+        $blocks = \PrettyBlocksModel::getBlocksAvailable();
+        $layouts = [];
+
+        foreach ($blocks as $block) {
+            $templates = $block['templates'] ?? ['default' => $block['template'] ?? ''];
+
+            foreach ($templates as $templateName => $templatePath) {
+                $identifier = $block['code'] . ':' . $templateName;
+                $layouts[] = [
+                    'id' => $identifier,
+                    'label' => $block['name'] ?? $identifier,
+                    'description' => $block['description'] ?? '',
+                    'template' => [
+                        'name' => $templateName,
+                        'path' => $templatePath,
+                    ],
+                    'blocks' => [
+                        [
+                            'code' => $block['code'],
+                            'name' => $block['name'] ?? $block['code'],
+                            'tab' => $block['tab'] ?? '',
+                            'icon' => $block['icon'] ?? '',
+                        ],
+                    ],
+                ];
+            }
+        }
+
+        return $layouts;
+    }
+
     public function indexAction()
     {
         $context = $this->get('prestashop.adapter.legacy.context')->getContext();
@@ -280,6 +328,8 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
         $ajax_editing_url = $this->getSFUrl('prettyblocks_get_connected_employees');
         $blockAvailableUrls = $this->getSFUrl('prettyblocks_api_get_blocks_available');
         $settingsUrls = $this->getSFUrl('prettyblocks_theme_settings');
+        $layoutPresetsUrl = $this->getSFUrl('prettyblocks_layout_presets');
+        $saveLayoutPresetUrl = $this->getSFUrl('prettyblocks_layout_presets_save');
         $shop_url = $context->shop->getBaseUrl(true) . $this->getLangLink($context->language->id, $context, $context->shop->id);
         $translator = \Context::getContext()->getTranslator();
         $shops = $this->getShops();
@@ -339,6 +389,8 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
                 'startup_url' => $startup_url,
                 'prettyblocks_route_generator' => $this->getSFUrl('prettyblocks_route_generator'),
                 'ajax_editing_url' => $ajax_editing_url,
+                'layout_presets' => $layoutPresetsUrl,
+                'save_layout_preset' => $saveLayoutPresetUrl,
             ],
             'trans_app' => [
                 'current_shop' => $translator->trans('Shop in modification', [], 'Modules.Prettyblocks.Admin'),
@@ -354,6 +406,8 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
                 'bg_color' => $translator->trans('Background color', [], 'Modules.Prettyblocks.Admin'),
                 'ex_color' => $translator->trans('Add a color ex: #123456', [], 'Modules.Prettyblocks.Admin'),
                 'theme_settings' => $translator->trans('Theme settings', [], 'Modules.Prettyblocks.Admin'),
+                'layout_presets' => $translator->trans('Layout presets', [], 'Modules.Prettyblocks.Admin'),
+                'layout_presets_description' => $translator->trans('Choose which preset to apply for each hook, language and shop.', [], 'Modules.Prettyblocks.Admin'),
                 'type_search_here' => $translator->trans('Type your search here', [], 'Modules.Prettyblocks.Admin'),
                 'search_blocks' => $translator->trans('Search blocks', [], 'Modules.Prettyblocks.Admin'),
                 'is_cached' => $translator->trans('Enable cache', [], 'Modules.Prettyblocks.Admin'),
@@ -390,6 +444,59 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
 
             'session_token' => $session_token,
             'number_of_editors' => $number_of_editors,
+        ]);
+    }
+
+    public function getLayoutPresetsAction(Request $request)
+    {
+        $context = $this->get('prestashop.adapter.legacy.context')->getContext();
+        $idLang = (int) $request->get('id_lang', $context->language->id);
+        $idShop = (int) $request->get('id_shop', $context->shop->id);
+        $hookName = (string) $request->get('hook', '');
+
+        $selected = $hookName !== '' ? LayoutPresetDataProvider::getByHook($hookName, $idLang, $idShop) : null;
+
+        return (new JsonResponse())->setData([
+            'layouts' => $this->getLayoutsFromRegisteredBlocks(),
+            'presets' => LayoutPresetDataProvider::getAll($idLang, $idShop),
+            'selected' => $selected,
+            'hooks' => $this->getAvailableHooksList(),
+            'context' => [
+                'id_lang' => $idLang,
+                'id_shop' => $idShop,
+                'hook' => $hookName,
+            ],
+        ]);
+    }
+
+    public function saveLayoutPresetAction(Request $request)
+    {
+        $payload = json_decode($request->getContent(), true);
+        $payload = is_array($payload) ? $payload : [];
+
+        $context = $this->get('prestashop.adapter.legacy.context')->getContext();
+        $idLang = (int) ($payload['id_lang'] ?? $request->get('id_lang', $context->language->id));
+        $idShop = (int) ($payload['id_shop'] ?? $request->get('id_shop', $context->shop->id));
+        $hookName = (string) ($payload['hook'] ?? $request->get('hook', ''));
+        $preset = (string) ($payload['preset'] ?? $request->get('preset', ''));
+
+        if ($hookName === '' || $preset === '') {
+            return (new JsonResponse())->setData([
+                'success' => false,
+                'message' => $context->getTranslator()->trans('Missing hook or preset to save.', [], 'Modules.Prettyblocks.Admin'),
+            ]);
+        }
+
+        $result = LayoutPresetDataPersister::save($idLang, $idShop, $hookName, $preset);
+
+        return (new JsonResponse())->setData([
+            'success' => (bool) $result,
+            'preset' => [
+                'hook' => $hookName,
+                'preset' => $preset,
+                'id_lang' => $idLang,
+                'id_shop' => $idShop,
+            ],
         ]);
     }
 
