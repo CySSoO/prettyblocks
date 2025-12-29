@@ -33,6 +33,7 @@ class PrettyBlocksModel extends ObjectModel
     public $name;
     public $zone_name;
     public $position;
+    public $is_temporary = 0;
     public $id_shop;
     public $id_lang;
     public $date_add;
@@ -57,6 +58,7 @@ class PrettyBlocksModel extends ObjectModel
             'name' => ['type' => self::TYPE_STRING,   'validate' => 'isCleanHtml'],
             'id_shop' => ['type' => self::TYPE_INT, 'validate' => 'isInt'],
             'id_lang' => ['type' => self::TYPE_INT, 'validate' => 'isInt'],
+            'is_temporary' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool'],
 
             // multishop
             'instance_id' => ['type' => self::TYPE_STRING,  'validate' => 'isCleanHtml'],
@@ -137,7 +139,7 @@ class PrettyBlocksModel extends ObjectModel
      *
      * @return array
      */
-    public static function getInstanceByZone($zone_name, $context = 'back', $id_lang = null, $id_shop = null)
+    public static function getInstanceByZone($zone_name, $context = 'back', $id_lang = null, $id_shop = null, $includeTemporary = false, $onlyTemporary = false)
     {
         $contextPS = Context::getContext();
 
@@ -148,11 +150,22 @@ class PrettyBlocksModel extends ObjectModel
         $psc->where('zone_name', '=', $zone_name);
         $psc->where('id_shop', '=', (int) $id_shop);
         $psc->where('id_lang', '=', (int) $id_lang);
+        if ($onlyTemporary) {
+            $psc->where('is_temporary', '=', 1);
+        } elseif (!$includeTemporary) {
+            $psc->where('is_temporary', '=', 0);
+        }
 
         $psc->orderBy('position');
         $blocks = [];
         foreach ($psc->getResults() as $res) {
             if ($res) {
+                if (!$includeTemporary && (int) $res->is_temporary === 1) {
+                    continue;
+                }
+                if ($onlyTemporary && (int) $res->is_temporary === 0) {
+                    continue;
+                }
                 $block = $res->mergeStateWithFields($context === 'front' ? $id_lang : null);
                 $block = $context === 'front' ? (new BlockPresenter())->present($block) : $block;
                 $blocks[] = $block;
@@ -920,11 +933,35 @@ class PrettyBlocksModel extends ObjectModel
         $query = new DbQuery();
         $query->select('MAX(position)')
             ->from('prettyblocks')
-            ->where('`zone_name` = \'' . $zone_name . '\'')
+            ->where('`zone_name` = \'" . $zone_name . "\'')
             ->where('`id_lang` = ' . (int) $id_lang)
-            ->where('`id_shop` = ' . (int) $id_shop);
+            ->where('`id_shop` = ' . (int) $id_shop)
+            ->where('`is_temporary` = 0');
 
         return (int) DB::getInstance()->getValue($query);
+    }
+
+    public static function deleteTemporaryByZone($zone_name, $id_lang, $id_shop)
+    {
+        return Db::getInstance()->delete(
+            'prettyblocks',
+            'zone_name = "' . pSQL($zone_name) . '"'
+            . ' AND id_lang = ' . (int) $id_lang
+            . ' AND id_shop = ' . (int) $id_shop
+            . ' AND is_temporary = 1'
+        );
+    }
+
+    public static function promoteTemporaryByZone($zone_name, $id_lang, $id_shop)
+    {
+        return Db::getInstance()->update(
+            'prettyblocks',
+            ['is_temporary' => 0],
+            'zone_name = "' . pSQL($zone_name) . '"'
+            . ' AND id_lang = ' . (int) $id_lang
+            . ' AND id_shop = ' . (int) $id_shop
+            . ' AND is_temporary = 1'
+        );
     }
 
     /**

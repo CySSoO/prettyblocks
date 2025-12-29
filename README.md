@@ -70,6 +70,16 @@ You can also add our module ClassicBlocks for having 4 blocks to use [Download C
 
 Discover our [PrestaShop SEO / Performance and Mobile Optimized Theme: CartZilla](https://www.prestasafe.com/product/theme-prestashop-cartzilla) compatible PrettyBlocks !
 
+## Prévisualisation des layouts
+
+Vous pouvez tester un preset de layout avant de l'appliquer définitivement sur un hook :
+
+1. Depuis l'UI Layouts, choisissez un preset et lancez la **prévisualisation**. Les blocs du preset sont instanciés avec un flag temporaire et rendus via `views/templates/front/zone.tpl` pour refléter le rendu final.
+2. Si le rendu vous convient, cliquez sur **Confirmer** : le flag temporaire est retiré et les blocs deviennent persistants dans la zone ciblée.
+3. Si vous souhaitez annuler, utilisez l'action **Annuler** qui supprime uniquement les blocs marqués comme temporaires sans toucher aux blocs existants.
+
+Ces actions permettent de préparer un layout sans impacter immédiatement le front-office et de valider les changements une fois la prévisualisation validée.
+
 ## Top contributors 
 <p>Thanks to</p>
 <a href="https://github.com/PrestaSafe/prettyblocks/graphs/contributors">

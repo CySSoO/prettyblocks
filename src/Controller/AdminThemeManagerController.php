@@ -21,11 +21,13 @@
 namespace PrestaSafe\PrettyBlocks\Controller;
 
 // use Doctrine\Common\Cache\CacheProvider;
+use Cache;
 use PrestaSafe\PrettyBlocks\DataPersister\ConnectedEmployeeDataPersister;
 use PrestaSafe\PrettyBlocks\DataPersister\LayoutPresetDataPersister;
 use PrestaSafe\PrettyBlocks\DataProvider\ConnectedEmployeeDataProvider;
 use PrestaSafe\PrettyBlocks\DataProvider\LayoutPresetDataProvider;
 use PrestaSafe\PrettyBlocks\Core\Layout\LayoutCatalog;
+use PrestaSafe\PrettyBlocks\Core\Layout\LayoutApplier;
 use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -331,6 +333,9 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
         $settingsUrls = $this->getSFUrl('prettyblocks_theme_settings');
         $layoutPresetsUrl = $this->getSFUrl('prettyblocks_layout_presets');
         $saveLayoutPresetUrl = $this->getSFUrl('prettyblocks_layout_presets_save');
+        $previewLayoutPresetUrl = $this->getSFUrl('prettyblocks_layout_presets_preview');
+        $confirmLayoutPreviewUrl = $this->getSFUrl('prettyblocks_layout_presets_confirm');
+        $cancelLayoutPreviewUrl = $this->getSFUrl('prettyblocks_layout_presets_cancel');
         $shop_url = $context->shop->getBaseUrl(true) . $this->getLangLink($context->language->id, $context, $context->shop->id);
         $translator = \Context::getContext()->getTranslator();
         $shops = $this->getShops();
@@ -392,6 +397,9 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
                 'ajax_editing_url' => $ajax_editing_url,
                 'layout_presets' => $layoutPresetsUrl,
                 'save_layout_preset' => $saveLayoutPresetUrl,
+                'preview_layout_preset' => $previewLayoutPresetUrl,
+                'confirm_layout_preview' => $confirmLayoutPreviewUrl,
+                'cancel_layout_preview' => $cancelLayoutPreviewUrl,
             ],
             'trans_app' => [
                 'current_shop' => $translator->trans('Shop in modification', [], 'Modules.Prettyblocks.Admin'),
@@ -499,6 +507,109 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
                 'id_lang' => $idLang,
                 'id_shop' => $idShop,
             ],
+        ]);
+    }
+
+    public function previewLayoutPresetAction(Request $request)
+    {
+        $context = $this->get('prestashop.adapter.legacy.context')->getContext();
+        $payload = json_decode($request->getContent(), true);
+        $payload = is_array($payload) ? $payload : [];
+
+        $idLang = (int) ($payload['id_lang'] ?? $request->get('id_lang', $context->language->id));
+        $idShop = (int) ($payload['id_shop'] ?? $request->get('id_shop', $context->shop->id));
+        $hookName = (string) ($payload['hook'] ?? $request->get('hook', ''));
+        $presetKey = (string) ($payload['preset'] ?? $request->get('preset', ''));
+
+        if ($hookName === '' || $presetKey === '') {
+            return (new JsonResponse())->setData([
+                'success' => false,
+                'message' => $context->getTranslator()->trans('Missing hook or preset to preview.', [], 'Modules.Prettyblocks.Admin'),
+            ]);
+        }
+
+        $preset = LayoutCatalog::findByKey($presetKey);
+
+        if ($preset === null) {
+            return (new JsonResponse())->setData([
+                'success' => false,
+                'message' => $context->getTranslator()->trans('Unknown layout preset.', [], 'Modules.Prettyblocks.Admin'),
+            ]);
+        }
+
+        \PrettyBlocksModel::deleteTemporaryByZone($hookName, $idLang, $idShop);
+        $created = LayoutApplier::apply($preset, $hookName, $idLang, $idShop, true);
+
+        $blocks = \PrettyBlocksModel::getInstanceByZone($hookName, 'front', $idLang, $idShop, true);
+        $context->smarty->assign([
+            'zone_name' => $hookName,
+            'blocks' => $blocks,
+            'alias' => '',
+            'priority' => false,
+        ]);
+
+        $html = $context->smarty->fetch('module:prettyblocks/views/templates/front/zone.tpl');
+
+        return (new JsonResponse())->setData([
+            'success' => true,
+            'created' => $created,
+            'html' => $html,
+            'temporary' => true,
+        ]);
+    }
+
+    public function confirmLayoutPreviewAction(Request $request)
+    {
+        $context = $this->get('prestashop.adapter.legacy.context')->getContext();
+        $payload = json_decode($request->getContent(), true);
+        $payload = is_array($payload) ? $payload : [];
+
+        $idLang = (int) ($payload['id_lang'] ?? $request->get('id_lang', $context->language->id));
+        $idShop = (int) ($payload['id_shop'] ?? $request->get('id_shop', $context->shop->id));
+        $hookName = (string) ($payload['hook'] ?? $request->get('hook', ''));
+
+        if ($hookName === '') {
+            return (new JsonResponse())->setData([
+                'success' => false,
+                'message' => $context->getTranslator()->trans('Missing hook to confirm preview.', [], 'Modules.Prettyblocks.Admin'),
+            ]);
+        }
+
+        $updated = \PrettyBlocksModel::promoteTemporaryByZone($hookName, $idLang, $idShop);
+        LayoutApplier::refreshHookPositions($hookName, $idLang, $idShop, true);
+        Cache::clean('prettyblocks');
+        \Module::getInstanceByName('prettyblocks')->clearCache('*');
+
+        return (new JsonResponse())->setData([
+            'success' => (bool) $updated,
+            'updated' => $updated,
+        ]);
+    }
+
+    public function cancelLayoutPreviewAction(Request $request)
+    {
+        $context = $this->get('prestashop.adapter.legacy.context')->getContext();
+        $payload = json_decode($request->getContent(), true);
+        $payload = is_array($payload) ? $payload : [];
+
+        $idLang = (int) ($payload['id_lang'] ?? $request->get('id_lang', $context->language->id));
+        $idShop = (int) ($payload['id_shop'] ?? $request->get('id_shop', $context->shop->id));
+        $hookName = (string) ($payload['hook'] ?? $request->get('hook', ''));
+
+        if ($hookName === '') {
+            return (new JsonResponse())->setData([
+                'success' => false,
+                'message' => $context->getTranslator()->trans('Missing hook to cancel preview.', [], 'Modules.Prettyblocks.Admin'),
+            ]);
+        }
+
+        $deleted = \PrettyBlocksModel::deleteTemporaryByZone($hookName, $idLang, $idShop);
+        Cache::clean('prettyblocks');
+        \Module::getInstanceByName('prettyblocks')->clearCache('*');
+
+        return (new JsonResponse())->setData([
+            'success' => (bool) $deleted,
+            'deleted' => $deleted,
         ]);
     }
 

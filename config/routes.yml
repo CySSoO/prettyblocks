@@ -68,6 +68,30 @@ prettyblocks_layout_presets_save:
     _legacy_controller: AdminThemeManagerControllerSaveLayoutPreset
     _legacy_link: AdminThemeManagerControllerSaveLayoutPreset
 
+prettyblocks_layout_presets_preview:
+  path: prettyblocks/layout_presets/preview
+  methods: [POST]
+  defaults:
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::previewLayoutPresetAction'
+    _legacy_controller: AdminThemeManagerControllerPreviewLayoutPreset
+    _legacy_link: AdminThemeManagerControllerPreviewLayoutPreset
+
+prettyblocks_layout_presets_confirm:
+  path: prettyblocks/layout_presets/confirm
+  methods: [POST]
+  defaults:
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::confirmLayoutPreviewAction'
+    _legacy_controller: AdminThemeManagerControllerConfirmLayoutPreview
+    _legacy_link: AdminThemeManagerControllerConfirmLayoutPreview
+
+prettyblocks_layout_presets_cancel:
+  path: prettyblocks/layout_presets/cancel
+  methods: [POST]
+  defaults:
+    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::cancelLayoutPreviewAction'
+    _legacy_controller: AdminThemeManagerControllerCancelLayoutPreview
+    _legacy_link: AdminThemeManagerControllerCancelLayoutPreview
+
 
 # get block state
 prettyblocks_api_get_state:

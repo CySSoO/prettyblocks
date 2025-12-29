@@ -16,6 +16,17 @@ final class LayoutCatalog
         ];
     }
 
+    public static function findByKey(string $key): ?array
+    {
+        foreach (self::getAll() as $layout) {
+            if (($layout['key'] ?? '') === $key) {
+                return $layout;
+            }
+        }
+
+        return null;
+    }
+
     private static function homeHeroWithProducts(): array
     {
         return [
