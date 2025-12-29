@@ -80,6 +80,28 @@ Vous pouvez tester un preset de layout avant de l'appliquer définitivement sur 
 
 Ces actions permettent de préparer un layout sans impacter immédiatement le front-office et de valider les changements une fois la prévisualisation validée.
 
+### Hooks compatibles avec les presets
+
+Les presets fournis par défaut peuvent être appliqués sur les hooks suivants :
+
+* `displayHome`
+* `displayFooter`, `displayFooterBefore`, `displayFooterAfter`
+* `displayLeftColumn`, `displayRightColumn`
+
+### (Ré)activer les blocs par défaut
+
+Le paramètre **Remove default blocks** (`remove_default_blocks`) des réglages du module permet de désactiver tous les blocs livrés en standard si vous ne souhaitez conserver que vos blocs personnalisés. Désactivez ce paramètre pour réactiver les blocs par défaut ainsi que leur CSS/JS front-office.
+
+### Chargement des assets front (blocs par défaut)
+
+Lorsque les blocs par défaut sont actifs (c’est-à-dire si `remove_default_blocks` est désactivé), le hook `hookdisplayHeader` charge automatiquement :
+
+* la librairie **Tiny Slider** (CSS + JS) depuis un CDN ;
+* le JavaScript front du module (`views/js/front.js`) ;
+* la feuille de style front `views/css/dist/main.css`.
+
+Ces assets ne sont pas injectés si vous choisissez de supprimer les blocs par défaut.
+
 ## Top contributors 
 <p>Thanks to</p>
 <a href="https://github.com/PrestaSafe/prettyblocks/graphs/contributors">
