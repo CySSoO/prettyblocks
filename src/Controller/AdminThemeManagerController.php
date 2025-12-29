@@ -32,6 +32,7 @@ use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 class AdminThemeManagerController extends FrameworkBundleAdminController
 {
@@ -213,10 +214,14 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
     {
         $useDomain = version_compare(_PS_VERSION_, '9.0.0.0', '<');
 
-        $url = \Link::getUrlSmarty([
-            'entity' => $entity,
-            'route' => $route,
-        ], true);
+        try {
+            $url = \Link::getUrlSmarty([
+                'entity' => $entity,
+                'route' => $route,
+            ], true);
+        } catch (RouteNotFoundException $exception) {
+            return '';
+        }
 
         // Si PS < 9, Link::getUrlSmarty() renvoie une URL relative => on ajoute le domaine
         if ($useDomain) {
