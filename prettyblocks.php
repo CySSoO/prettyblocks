@@ -342,13 +342,65 @@ class PrettyBlocks extends Module implements WidgetInterface
         return parent::install()
             && $this->loadDefault()
             && $this->createBlockDb()
-            && $this->registerHook($this->hooks);
+            && $this->registerHook($this->hooks)
+            && $this->installTabs();
     }
 
     public function uninstall()
     {
         return parent::uninstall()
-            && $this->removeDb();
+            && $this->removeDb()
+            && $this->uninstallTabs();
+    }
+
+    private function installTabs(): bool
+    {
+        $languages = \Language::getLanguages(false);
+
+        foreach ($this->tabs as $tabData) {
+            $tabId = \Tab::getIdFromClassName($tabData['class_name']);
+            $tab = $tabId ? new \Tab($tabId) : new \Tab();
+
+            $tab->active = (bool) ($tabData['visible'] ?? true);
+            $tab->class_name = $tabData['class_name'];
+            $tab->id_parent = (int) \Tab::getIdFromClassName($tabData['parent_class_name']);
+            $tab->module = $this->name;
+            $tab->route_name = $tabData['route_name'] ?? '';
+
+            foreach ($languages as $language) {
+                $tab->name[(int) $language['id_lang']] = $tabData['name'];
+            }
+
+            if ($tabId) {
+                if (!$tab->update()) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if (!$tab->add()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function uninstallTabs(): bool
+    {
+        foreach ($this->tabs as $tabData) {
+            $tabId = \Tab::getIdFromClassName($tabData['class_name']);
+
+            if ($tabId) {
+                $tab = new \Tab($tabId);
+                if (!$tab->delete()) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     public function hookActionFrontControllerSetVariables()
