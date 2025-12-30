@@ -175,6 +175,13 @@ class AdminLayoutPresetController extends FrameworkBundleAdminController
 
         $result = LayoutPresetDataPersister::delete($idLang, $idShop, $hookName);
 
+        if ($result) {
+            \PrettyBlocksModel::deleteBlocksFromZone($hookName, $idLang, $idShop);
+            LayoutApplier::refreshHookPositions($hookName, $idLang, $idShop);
+            Cache::clean('prettyblocks');
+            \Module::getInstanceByName('prettyblocks')->clearCache('*');
+        }
+
         if (!$request->isXmlHttpRequest() && $request->getRequestFormat() !== 'json') {
             $this->addFlash(
                 $result ? 'success' : 'error',
