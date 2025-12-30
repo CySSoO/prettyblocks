@@ -1,43 +1,70 @@
 {% extends '@PrestaShop/Admin/layout.html.twig' %}
 
 {% block content %}
+  {% set selectedPreset = selected.preset ?? '' %}
   <div class="row">
     <div class="col-12">
-      <div class="card">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <h3 class="card-header-title mb-0">{{ page_title }}</h3>
-          <span class="text-muted">{{ 'Manage the mapping between hooks and predefined layouts.'|trans({}, 'Modules.Prettyblocks.Admin') }}</span>
+      <div class="card shadow-sm">
+        <div class="card-header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+          <div>
+            <p class="mb-1 text-uppercase text-muted small">{{ 'Layout presets manager'|trans({}, 'Modules.Prettyblocks.Admin') }}</p>
+            <h3 class="card-header-title mb-0">{{ page_title }}</h3>
+          </div>
+          <div class="d-flex align-items-center gap-2 text-muted">
+            <span class="badge rounded-pill bg-primary-subtle text-primary">{{ presets|length }} {{ 'saved presets'|trans({}, 'Modules.Prettyblocks.Admin') }}</span>
+            <span class="badge rounded-pill bg-secondary text-white">{{ hooks|length }} {{ 'hooks detected'|trans({}, 'Modules.Prettyblocks.Admin') }}</span>
+          </div>
         </div>
-        <div class="card-body">
-          <form method="post" action="{{ save_url }}" class="row g-3">
+        <div class="card-body pb-1">
+          <div class="alert alert-info d-flex align-items-start" role="alert">
+            <i class="material-icons me-2">view_quilt</i>
+            <div>
+              <div class="fw-semibold">{{ 'Map a hook to a preset and instantly get a ready-to-use layout.'|trans({}, 'Modules.Prettyblocks.Admin') }}</div>
+              <small class="text-muted">{{ 'Use the helper cards to understand what each preset contains before applying it.'|trans({}, 'Modules.Prettyblocks.Admin') }}</small>
+            </div>
+          </div>
+          <form method="post" action="{{ save_url }}" class="row g-3 align-items-stretch">
             <input type="hidden" name="id_lang" value="{{ context_data.id_lang }}">
             <input type="hidden" name="id_shop" value="{{ context_data.id_shop }}">
 
             <div class="col-md-4">
-              <label class="form-label" for="layout-preset-hook">{{ 'Hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</label>
-              <select id="layout-preset-hook" name="hook" class="form-select" required>
-                <option value="">{{ 'Choose a hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</option>
-                {% for hook in hooks %}
-                  <option value="{{ hook.name }}" {% if context_data.hook is defined and hook.name == context_data.hook %}selected{% endif %}>
-                    {{ hook.name }}{% if hook.description %} - {{ hook.description }}{% endif %}
-                  </option>
-                {% endfor %}
-              </select>
+              <div class="form-group h-100">
+                <label class="form-label" for="layout-preset-hook">{{ 'Hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</label>
+                <select id="layout-preset-hook" name="hook" class="form-select" required>
+                  <option value="">{{ 'Choose a hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</option>
+                  {% for hook in hooks %}
+                    <option value="{{ hook.name }}" {% if context_data.hook is defined and hook.name == context_data.hook %}selected{% endif %}>
+                      {{ hook.name }}{% if hook.description %} - {{ hook.description }}{% endif %}
+                    </option>
+                  {% endfor %}
+                </select>
+                <small class="form-text text-muted">{{ 'Select where the preset will be applied.'|trans({}, 'Modules.Prettyblocks.Admin') }}</small>
+              </div>
             </div>
 
             <div class="col-md-4">
-              <label class="form-label" for="layout-preset-preset">{{ 'Preset'|trans({}, 'Modules.Prettyblocks.Admin') }}</label>
-              <select id="layout-preset-preset" name="preset" class="form-select" required>
-                <option value="">{{ 'Choose a preset'|trans({}, 'Modules.Prettyblocks.Admin') }}</option>
-                {% for preset in catalog %}
-                  <option value="{{ preset.key }}">{{ preset.label ?? preset.key }}</option>
-                {% endfor %}
-              </select>
-              <small class="form-text text-muted">{{ 'Select a layout preset to apply to the chosen hook.'|trans({}, 'Modules.Prettyblocks.Admin') }}</small>
+              <div class="form-group h-100">
+                <label class="form-label" for="layout-preset-preset">{{ 'Preset'|trans({}, 'Modules.Prettyblocks.Admin') }}</label>
+                <select id="layout-preset-preset" name="preset" class="form-select" required>
+                  <option value="">{{ 'Choose a preset'|trans({}, 'Modules.Prettyblocks.Admin') }}</option>
+                  {% for preset in catalog %}
+                    <option value="{{ preset.key }}" {% if preset.key == selectedPreset %}selected{% endif %}>{{ preset.label ?? preset.key }}</option>
+                  {% endfor %}
+                </select>
+                <small class="form-text text-muted">{{ 'Use the preview card to double-check content and best matching hooks.'|trans({}, 'Modules.Prettyblocks.Admin') }}</small>
+              </div>
             </div>
 
-            <div class="col-md-4 d-flex align-items-end">
-              <button type="submit" class="btn btn-primary">{{ 'Save preset'|trans({}, 'Modules.Prettyblocks.Admin') }}</button>
+            <div class="col-md-4">
+              <div class="h-100 d-flex align-items-end justify-content-between flex-column gap-2 p-3 bg-light rounded border">
+                <div class="w-100">
+                  <p class="fw-semibold mb-1" id="preset-preview-title">{{ selectedPreset and catalog_by_key[selectedPreset] is defined ? catalog_by_key[selectedPreset].label : 'Preset preview'|trans({}, 'Modules.Prettyblocks.Admin') }}</p>
+                  <p class="text-muted mb-2" id="preset-preview-description">{{ selectedPreset and catalog_by_key[selectedPreset] is defined ? catalog_by_key[selectedPreset].description : 'Choose a preset to see what it contains.'|trans({}, 'Modules.Prettyblocks.Admin') }}</p>
+                  <div class="d-flex flex-wrap gap-1" id="preset-preview-hooks"></div>
+                  <div class="text-muted small" id="preset-preview-blocks" {% if not selectedPreset %}style="display: none;"{% endif %}></div>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">{{ 'Save preset'|trans({}, 'Modules.Prettyblocks.Admin') }}</button>
+              </div>
             </div>
           </form>
         </div>
@@ -48,17 +75,22 @@
   <div class="row mt-3">
     <div class="col-12">
       <div class="card">
-        <div class="card-header">
-          <h3 class="card-header-title mb-0">{{ 'Existing presets'|trans({}, 'Modules.Prettyblocks.Admin') }}</h3>
+        <div class="card-header d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+          <div>
+            <h3 class="card-header-title mb-0">{{ 'Existing presets'|trans({}, 'Modules.Prettyblocks.Admin') }}</h3>
+            <p class="text-muted mb-0">{{ 'Review what is currently applied and quickly edit or delete it.'|trans({}, 'Modules.Prettyblocks.Admin') }}</p>
+          </div>
+          <span class="badge bg-light text-dark">{{ presets|length }} {{ 'entries'|trans({}, 'Modules.Prettyblocks.Admin') }}</span>
         </div>
         <div class="card-body p-0">
           <div class="table-responsive mb-0">
-            <table class="table mb-0">
+            <table class="table mb-0 align-middle">
               <thead>
                 <tr>
                   <th>{{ 'Hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</th>
                   <th>{{ 'Preset'|trans({}, 'Modules.Prettyblocks.Admin') }}</th>
                   <th>{{ 'Description'|trans({}, 'Modules.Prettyblocks.Admin') }}</th>
+                  <th>{{ 'Recommended hooks'|trans({}, 'Modules.Prettyblocks.Admin') }}</th>
                   <th class="text-end">{{ 'Actions'|trans({}, 'Modules.Prettyblocks.Admin') }}</th>
                 </tr>
               </thead>
@@ -66,21 +98,37 @@
                 {% for preset in presets %}
                   {% set presetMeta = catalog_by_key[preset.preset] ?? null %}
                   <tr>
-                    <td class="align-middle">{{ preset.hook_name }}</td>
+                    <td class="align-middle"><span class="badge bg-primary-subtle text-primary">{{ preset.hook_name }}</span></td>
                     <td class="align-middle">{{ presetMeta ? presetMeta.label : preset.preset }}</td>
                     <td class="align-middle text-muted">{{ presetMeta ? presetMeta.description : '-' }}</td>
+                    <td class="align-middle">
+                      {% if presetMeta and presetMeta.hooks is defined and presetMeta.hooks|length %}
+                        <div class="d-flex flex-wrap gap-1">
+                          {% for hook in presetMeta.hooks %}
+                            <span class="badge bg-light text-dark border">{{ hook }}</span>
+                          {% endfor %}
+                        </div>
+                      {% else %}
+                        <span class="text-muted">{{ 'Any hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</span>
+                      {% endif %}
+                    </td>
                     <td class="text-end">
-                      <form method="post" action="{{ delete_url }}" class="d-inline">
-                        <input type="hidden" name="hook" value="{{ preset.hook_name }}">
-                        <input type="hidden" name="id_lang" value="{{ context_data.id_lang }}">
-                        <input type="hidden" name="id_shop" value="{{ context_data.id_shop }}">
-                        <button class="btn btn-outline-danger btn-sm" type="submit">{{ 'Delete'|trans({}, 'Modules.Prettyblocks.Admin') }}</button>
-                      </form>
+                      <div class="btn-group" role="group">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-fill-form data-hook="{{ preset.hook_name }}" data-preset="{{ preset.preset }}">
+                          {{ 'Edit selection'|trans({}, 'Modules.Prettyblocks.Admin') }}
+                        </button>
+                        <form method="post" action="{{ delete_url }}" class="d-inline">
+                          <input type="hidden" name="hook" value="{{ preset.hook_name }}">
+                          <input type="hidden" name="id_lang" value="{{ context_data.id_lang }}">
+                          <input type="hidden" name="id_shop" value="{{ context_data.id_shop }}">
+                          <button class="btn btn-outline-danger btn-sm" type="submit">{{ 'Delete'|trans({}, 'Modules.Prettyblocks.Admin') }}</button>
+                        </form>
+                      </div>
                     </td>
                   </tr>
                 {% else %}
                   <tr>
-                    <td colspan="4" class="text-center text-muted py-4">{{ 'No presets have been saved yet.'|trans({}, 'Modules.Prettyblocks.Admin') }}</td>
+                    <td colspan="5" class="text-center text-muted py-4">{{ 'No presets have been saved yet.'|trans({}, 'Modules.Prettyblocks.Admin') }}</td>
                   </tr>
                 {% endfor %}
               </tbody>
@@ -90,4 +138,74 @@
       </div>
     </div>
   </div>
+
+  <script>
+    (function() {
+      const catalog = {{ catalog_by_key|json_encode|raw }};
+      const hookSelect = document.getElementById('layout-preset-hook');
+      const presetSelect = document.getElementById('layout-preset-preset');
+      const previewTitle = document.getElementById('preset-preview-title');
+      const previewDescription = document.getElementById('preset-preview-description');
+      const previewHooks = document.getElementById('preset-preview-hooks');
+      const previewBlocks = document.getElementById('preset-preview-blocks');
+
+      function renderPreview(presetKey) {
+        const meta = catalog[presetKey] || null;
+        const hasMeta = Boolean(meta);
+
+        previewTitle.textContent = hasMeta ? meta.label : '{{ 'Preset preview'|trans({}, 'Modules.Prettyblocks.Admin') }}';
+        previewDescription.textContent = hasMeta ? meta.description : '{{ 'Choose a preset to see what it contains.'|trans({}, 'Modules.Prettyblocks.Admin') }}';
+
+        previewHooks.innerHTML = '';
+        if (meta && Array.isArray(meta.hooks)) {
+          meta.hooks.forEach((hook) => {
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-light text-dark border';
+            badge.textContent = hook;
+            previewHooks.appendChild(badge);
+          });
+        }
+
+        if (meta && typeof meta.blocks_count === 'number') {
+          previewBlocks.style.display = 'block';
+          previewBlocks.textContent = meta.blocks_count === 1
+            ? '{{ 'Contains 1 ready-to-use block'|trans({}, 'Modules.Prettyblocks.Admin') }}'
+            : meta.blocks_count + ' {{ 'blocks are pre-configured in this preset'|trans({}, 'Modules.Prettyblocks.Admin') }}';
+        } else {
+          previewBlocks.style.display = 'none';
+        }
+      }
+
+      function fillFormFromRow(event) {
+        const button = event.currentTarget;
+        const hook = button.getAttribute('data-hook');
+        const preset = button.getAttribute('data-preset');
+
+        if (hook && hookSelect) {
+          hookSelect.value = hook;
+        }
+
+        if (preset && presetSelect) {
+          presetSelect.value = preset;
+          renderPreview(preset);
+        }
+
+        if (hookSelect && typeof hookSelect.scrollIntoView === 'function') {
+          hookSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
+      if (presetSelect) {
+        presetSelect.addEventListener('change', (event) => renderPreview(event.target.value));
+      }
+
+      document.querySelectorAll('[data-fill-form]').forEach((button) => {
+        button.addEventListener('click', fillFormFromRow);
+      });
+
+      if (presetSelect && presetSelect.value) {
+        renderPreview(presetSelect.value);
+      }
+    })();
+  </script>
 {% endblock %}
