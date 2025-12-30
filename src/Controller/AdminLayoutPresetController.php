@@ -21,6 +21,7 @@
 namespace PrestaSafe\PrettyBlocks\Controller;
 
 use Cache;
+use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaSafe\PrettyBlocks\Core\Layout\LayoutApplier;
 use PrestaSafe\PrettyBlocks\Core\Layout\LayoutCatalog;
 use PrestaSafe\PrettyBlocks\DataPersister\LayoutPresetDataPersister;
@@ -232,5 +233,12 @@ class AdminLayoutPresetController extends FrameworkBundleAdminController
         }
 
         return $layouts;
+    }
+
+    public static function getSubscribedServices(): array
+    {
+        return array_merge(parent::getSubscribedServices(), [
+            'prestashop.adapter.legacy.context' => LegacyContext::class,
+        ]);
     }
 }
