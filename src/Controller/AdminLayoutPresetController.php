@@ -292,13 +292,18 @@ class AdminLayoutPresetController extends FrameworkBundleAdminController
     {
         $hooks = \Hook::getHooks(true, false);
 
+        $frontDisplayHooks = array_filter($hooks, function ($hook) {
+            return preg_match('/^display(?!Admin|BackOffice)/', $hook['name']);
+        });
+
         return array_map(function ($hook) {
             return [
                 'id_hook' => (int) $hook['id_hook'],
                 'name' => $hook['name'],
                 'title' => $hook['title'] ?? $hook['name'],
+                'description' => $hook['description'] ?? '',
             ];
-        }, $hooks);
+        }, $frontDisplayHooks);
     }
 
     private function getLayoutsFromRegisteredBlocks(): array
