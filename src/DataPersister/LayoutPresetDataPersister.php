@@ -18,14 +18,18 @@ final class LayoutPresetDataPersister
         $value = pSQL($preset);
         $now = date('Y-m-d H:i:s');
 
-        $sql = '
-            INSERT INTO `' . _DB_PREFIX_ . 'prettyblocks_layout_presets`
-            (id_lang, id_shop, hook_name, preset, date_add, date_upd)
-            VALUES (' .
-            (int) $idLang . ', ' .
-            (int) $idShop . ", '" . $hook . "', '" . $value . "', '" . $now . "', '" . $now . "')
-            ON DUPLICATE KEY UPDATE preset = VALUES(preset), date_upd = VALUES(date_upd)
-        ';
+        $sql = sprintf(
+            "INSERT INTO `%sprettyblocks_layout_presets` (id_lang, id_shop, hook_name, preset, date_add, date_upd) " .
+            "VALUES (%d, %d, '%s', '%s', '%s', '%s') " .
+            "ON DUPLICATE KEY UPDATE preset = VALUES(preset), date_upd = VALUES(date_upd)",
+            _DB_PREFIX_,
+            (int) $idLang,
+            (int) $idShop,
+            $hook,
+            $value,
+            $now,
+            $now
+        );
 
         return \Db::getInstance()->execute($sql);
     }
@@ -37,12 +41,14 @@ final class LayoutPresetDataPersister
     {
         self::ensureTable();
 
-        return \Db::getInstance()->delete(
-            'prettyblocks_layout_presets',
-            'id_lang = ' . (int) $idLang .
-            ' AND id_shop = ' . (int) $idShop .
-            " AND hook_name = '" . pSQL($hookName) . "'"
+        $where = sprintf(
+            "id_lang = %d AND id_shop = %d AND hook_name = '%s'",
+            (int) $idLang,
+            (int) $idShop,
+            pSQL($hookName)
         );
+
+        return \Db::getInstance()->delete('prettyblocks_layout_presets', $where);
     }
 
     private static function ensureTable(): void
