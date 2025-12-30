@@ -6,6 +6,62 @@ prettyblocks_layout_presets:
     _legacy_controller: AdminLayoutPresetController
     _legacy_link: AdminLayoutPresetController
 
+admin_prettyblocks:
+  path: /modules/prettyblocks/
+  methods: [GET]
+  defaults:
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::indexAction'
+    _legacy_controller: AdminPrettyBlocksConfiguration
+    _legacy_link: AdminPrettyBlocksConfiguration
+
+prettyblocks_api:
+  path: /modules/prettyblocks/api
+  methods: [GET,POST]
+  defaults:
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::testAction'
+
+prettyblocks_theme_settings:
+  path: /modules/prettyblocks/theme-settings
+  methods: [GET]
+  defaults:
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::getSettingsAction'
+
+prettyblocks_upload:
+  path: /modules/prettyblocks/upload
+  methods: [POST]
+  defaults:
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::uploadAction'
+
+prettyblocks_api_get_blocks_available:
+  path: /modules/prettyblocks/api/blocks-available
+  methods: [GET]
+  defaults:
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::getBlocksAvailableAction'
+
+prettyblocks_homesimulator:
+  path: /modules/prettyblocks/homesimulator
+  methods: [GET]
+  defaults:
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::homeSimulator'
+
+prettyblocks_collection:
+  path: /modules/prettyblocks/collection
+  methods: [GET]
+  defaults:
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::getCollectionAction'
+
+prettyblocks_route_generator:
+  path: /modules/prettyblocks/route-generator
+  methods: [POST]
+  defaults:
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::routeGeneratorAction'
+
+prettyblocks_get_connected_employees:
+  path: /modules/prettyblocks/editing/connected-employees
+  methods: [POST]
+  defaults:
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController::getConnectedEmployeesAction'
+
 prettyblocks_layout_presets_save:
   path: /modules/prettyblocks/layout_presets/save
   methods: [POST]
