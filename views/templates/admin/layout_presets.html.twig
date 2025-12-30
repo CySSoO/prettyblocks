@@ -19,7 +19,7 @@
                 <option value="">{{ 'Choose a hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</option>
                 {% for hook in hooks %}
                   <option value="{{ hook.name }}" {% if context_data.hook is defined and hook.name == context_data.hook %}selected{% endif %}>
-                    {{ hook.title }} ({{ hook.name }})
+                    {{ hook.name }}{% if hook.description %} - {{ hook.description }}{% endif %}
                   </option>
                 {% endfor %}
               </select>
