@@ -59,6 +59,8 @@ class AdminLayoutPresetController extends FrameworkBundleAdminController
                 $catalogByKey[$preset['key']] = [
                     'label' => $preset['label'] ?? $preset['key'],
                     'description' => $preset['description'] ?? '',
+                    'hooks' => $preset['hooks'] ?? [],
+                    'blocks_count' => isset($preset['blocks']) ? count($preset['blocks']) : 0,
                 ];
             }
 
