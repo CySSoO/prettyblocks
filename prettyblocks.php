@@ -49,6 +49,12 @@ class PrettyBlocks extends Module implements WidgetInterface
             'parent_class_name' => 'IMPROVE',
         ],
         [
+            'name' => 'PrettyBlocks', // One name for all langs
+            'class_name' => 'AdminThemeManagerController',
+            'visible' => true,
+            'parent_class_name' => 'AdminThemeManagerController',
+        ],
+        [
             'name' => 'Layout presets',
             'class_name' => 'AdminLayoutPresetController',
             'visible' => true,
