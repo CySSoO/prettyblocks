@@ -7,10 +7,10 @@ services:
     PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController:
         class: PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController
         public: true
-        parent: prestashop.core.controller.abstract
+        parent: prestashop.core.admin.controller
 
     PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController:
         class: PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController
         public: true
-        parent: prestashop.core.controller.abstract
-    
+        parent: prestashop.core.admin.controller
+
