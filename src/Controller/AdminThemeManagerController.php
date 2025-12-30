@@ -23,6 +23,7 @@ namespace PrestaSafe\PrettyBlocks\Controller;
 // use Doctrine\Common\Cache\CacheProvider;
 use PrestaSafe\PrettyBlocks\DataPersister\ConnectedEmployeeDataPersister;
 use PrestaSafe\PrettyBlocks\DataProvider\ConnectedEmployeeDataProvider;
+use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -407,6 +408,13 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
 
             'session_token' => $session_token,
             'number_of_editors' => $number_of_editors,
+        ]);
+    }
+
+    public static function getSubscribedServices(): array
+    {
+        return array_merge(parent::getSubscribedServices(), [
+            'prestashop.adapter.legacy.context' => LegacyContext::class,
         ]);
     }
 
