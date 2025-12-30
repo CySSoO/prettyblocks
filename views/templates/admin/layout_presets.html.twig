@@ -30,15 +30,21 @@
             <div class="col-md-4">
               <div class="form-group h-100">
                 <label class="form-label" for="layout-preset-hook">{{ 'Hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</label>
-                <select id="layout-preset-hook" name="hook" class="form-select" required>
-                  <option value="">{{ 'Choose a hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</option>
+                <input
+                  id="layout-preset-hook"
+                  name="hook"
+                  class="form-control"
+                  list="layout-preset-hook-list"
+                  placeholder="{{ 'Start typing a hook name'|trans({}, 'Modules.Prettyblocks.Admin') }}"
+                  value="{{ context_data.hook ?? '' }}"
+                  required
+                >
+                <datalist id="layout-preset-hook-list">
                   {% for hook in hooks %}
-                    <option value="{{ hook.name }}" {% if context_data.hook is defined and hook.name == context_data.hook %}selected{% endif %}>
-                      {{ hook.name }}{% if hook.description %} - {{ hook.description }}{% endif %}
-                    </option>
+                    <option value="{{ hook.name }}">{{ hook.description ?: hook.title }}</option>
                   {% endfor %}
-                </select>
-                <small class="form-text text-muted">{{ 'Select where the preset will be applied.'|trans({}, 'Modules.Prettyblocks.Admin') }}</small>
+                </datalist>
+                <small class="form-text text-muted">{{ 'Start typing to search available hooks.'|trans({}, 'Modules.Prettyblocks.Admin') }}</small>
               </div>
             </div>
 
