@@ -3,4 +3,14 @@ services:
         class: PrestaSafe\PrettyBlocks\Command\ReleaseCommand
         tags:
             - { name: 'console.command' }
+
+    PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController:
+        class: PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController
+        public: true
+        parent: prestashop.core.controller.abstract
+
+    PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController:
+        class: PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController
+        public: true
+        parent: prestashop.core.controller.abstract
     
