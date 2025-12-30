@@ -43,22 +43,23 @@ class PrettyBlocks extends Module implements WidgetInterface
     public $form_trans = [];
     public $tabs = [
         [
-            'name' => 'PrettyBlocks', // One name for all langs
-            'class_name' => 'AdminThemeManagerController',
+            'name' => 'PrettyBlocks',
+            'class_name' => 'AdminPrettyBlocks',
             'visible' => true,
             'parent_class_name' => 'IMPROVE',
         ],
         [
-            'name' => 'PrettyBlocks', // One name for all langs
-            'class_name' => 'AdminThemeManagerController',
+            'name' => 'Configuration',
+            'class_name' => 'AdminPrettyBlocksConfiguration',
             'visible' => true,
-            'parent_class_name' => 'AdminThemeManagerController',
+            'parent_class_name' => 'AdminPrettyBlocks',
+            'route_name' => 'admin_prettyblocks',
         ],
         [
-            'name' => 'Layout presets',
-            'class_name' => 'AdminLayoutPresetController',
+            'name' => 'Presets',
+            'class_name' => 'AdminPrettyBlocksPresets',
             'visible' => true,
-            'parent_class_name' => 'AdminThemeManagerController',
+            'parent_class_name' => 'AdminPrettyBlocks',
             'route_name' => 'prettyblocks_layout_presets',
         ],
     ];

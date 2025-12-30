@@ -1,149 +1,31 @@
-admin_prettyblocks:
-  path: prettyblocks/
-  methods: [GET,POST]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::indexAction'
-    _legacy_controller: AdminThemeManagerController
-    _legacy_link: AdminThemeManagerController
-# route generator (for opening custom page in prettyblocks)
-
-prettyblocks_route_generator:
-  path: prettyblocks/route_generator/
-  methods: [GET,POST]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::routeGeneratorAction'
-    _legacy_controller: AdminThemeManagerControllerRouteGenerator
-    _legacy_link: AdminThemeManagerControllerRouteGenerator
-
-prettyblocks_block_render:
-  path: prettyblocks/block/
-  methods: [GET,POST]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::renderBlockAction'
-    _legacy_controller: AdminThemeManagerController
-    _legacy_link: AdminThemeManagerController
-
-
-prettyblocks_api:
-  path: prettyblocks/api/
-  methods: [GET,POST]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::testAction'
-    _legacy_controller: AdminThemeManagerController
-    _legacy_link: AdminThemeManagerController
-
-# Get collection
-prettyblocks_collection:
-  path: prettyblocks/collection/
-  methods: [GET,POST]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::getCollectionAction'
-    _legacy_controller: AdminThemeManagerControllerGetCollectionAction
-    _legacy_link: AdminThemeManagerControllerGetCollectionAction
-
-
-# Upload for DropZone
-prettyblocks_upload:
-  path: prettyblocks/upload/
-  methods: [POST,GET]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::uploadAction'
-    _legacy_controller: AdminThemeManagerControllerUploadAction
-    _legacy_link: AdminThemeManagerControllerUploadAction
-
-# Layout presets
 prettyblocks_layout_presets:
-  path: prettyblocks/layout_presets/
+  path: /modules/prettyblocks/layout_presets/
   methods: [GET,POST]
   defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminLayoutPresetController::getLayoutPresetsAction'
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController::getLayoutPresetsAction'
     _legacy_controller: AdminLayoutPresetController
     _legacy_link: AdminLayoutPresetController
 
 prettyblocks_layout_presets_save:
-  path: prettyblocks/layout_presets/save
+  path: /modules/prettyblocks/layout_presets/save
   methods: [POST]
   defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminLayoutPresetController::saveLayoutPresetAction'
-    _legacy_controller: AdminLayoutPresetControllerSave
-    _legacy_link: AdminLayoutPresetControllerSave
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController::saveLayoutPresetAction'
 
 prettyblocks_layout_presets_preview:
-  path: prettyblocks/layout_presets/preview
+  path: /modules/prettyblocks/layout_presets/preview
   methods: [POST]
   defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminLayoutPresetController::previewLayoutPresetAction'
-    _legacy_controller: AdminLayoutPresetControllerPreview
-    _legacy_link: AdminLayoutPresetControllerPreview
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController::previewLayoutPresetAction'
 
 prettyblocks_layout_presets_confirm:
-  path: prettyblocks/layout_presets/confirm
+  path: /modules/prettyblocks/layout_presets/confirm
   methods: [POST]
   defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminLayoutPresetController::confirmLayoutPreviewAction'
-    _legacy_controller: AdminLayoutPresetControllerConfirm
-    _legacy_link: AdminLayoutPresetControllerConfirm
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController::confirmLayoutPreviewAction'
 
 prettyblocks_layout_presets_cancel:
-  path: prettyblocks/layout_presets/cancel
+  path: /modules/prettyblocks/layout_presets/cancel
   methods: [POST]
   defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminLayoutPresetController::cancelLayoutPreviewAction'
-    _legacy_controller: AdminLayoutPresetControllerCancel
-    _legacy_link: AdminLayoutPresetControllerCancel
-
-
-# get block state
-prettyblocks_api_get_state:
-  path: prettyblocks/get_state/
-  methods: [GET,POST]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::getState'
-    _legacy_controller: AdminThemeManagerController
-    _legacy_link: AdminThemeManagerController
-
-# get blocks available
-prettyblocks_api_get_blocks_available:
-  path: prettyblocks/get_blocks_available/
-  methods: [GET,POST]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::getBlocksAvailableAction'
-    _legacy_controller: AdminThemeManagerController
-    _legacy_link: AdminThemeManagerController
-
-
-
-prettyblocks_homesimulator:
-  path: prettyblocks/homesimulator/
-  methods: [GET,POST]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::homeSimulator'
-    _legacy_controller: AdminThemeManagerControllerHomeSimulator
-    _legacy_link: AdminThemeManagerControllerHomeSimulator
-
-
-admin_prettyblocks_test:
-  path: prettyblocks/test/
-  methods: [GET,POST]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::testAction'
-    _legacy_controller: AdminThemeManagerController
-    _legacy_link: AdminThemeManagerController
-
-
-#get gobals settings
-prettyblocks_theme_settings:
-  path: prettyblocks/get_theme_settings/
-  methods: [GET,POST]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::getSettingsAction'
-    _legacy_controller: AdminThemeManagerController
-    _legacy_link: AdminThemeManagerController
-
-prettyblocks_get_connected_employees:
-  path: prettyblocks/get_connected_employees/
-  methods: [GET,POST]
-  defaults:
-    _controller: 'PrestaSafe\\PrettyBlocks\\Controller\\AdminThemeManagerController::getConnectedEmployeesAction'
-    _legacy_controller: AdminThemeManagerController
-    _legacy_link: AdminThemeManagerController
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController::cancelLayoutPreviewAction'
