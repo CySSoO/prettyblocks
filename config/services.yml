@@ -7,10 +7,16 @@ services:
     PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController:
         class: PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController
         public: true
-        parent: prestashop.core.admin.controller
+        autowire: true
+        autoconfigure: true
+        tags:
+            - 'controller.service_arguments'
 
     PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController:
         class: PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController
         public: true
-        parent: prestashop.core.admin.controller
+        autowire: true
+        autoconfigure: true
+        tags:
+            - 'controller.service_arguments'
 
