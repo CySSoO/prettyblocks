@@ -103,7 +103,24 @@ class AdminLayoutPresetController extends FrameworkBundleAdminController
             ]);
         }
 
+        $presetDefinition = LayoutCatalog::findByKey($preset);
+
+        if ($presetDefinition === null) {
+            return (new JsonResponse())->setData([
+                'success' => false,
+                'message' => $context->getTranslator()->trans('Unknown layout preset.', [], 'Modules.Prettyblocks.Admin'),
+            ]);
+        }
+
         $result = LayoutPresetDataPersister::save($idLang, $idShop, $hookName, $preset);
+
+        if ($result) {
+            \PrettyBlocksModel::deleteBlocksFromZone($hookName, $idLang, $idShop);
+            LayoutApplier::apply($presetDefinition, $hookName, $idLang, $idShop);
+            LayoutApplier::refreshHookPositions($hookName, $idLang, $idShop);
+            Cache::clean('prettyblocks');
+            \Module::getInstanceByName('prettyblocks')->clearCache('*');
+        }
 
         if (!$request->isXmlHttpRequest() && $request->getRequestFormat() !== 'json') {
             $this->addFlash(
