@@ -35,23 +35,53 @@ class AdminLayoutPresetController extends FrameworkBundleAdminController
     public function getLayoutPresetsAction(Request $request)
     {
         $context = $this->get('prestashop.adapter.legacy.context')->getContext();
+        $translator = $context->getTranslator();
         $idLang = (int) $request->get('id_lang', $context->language->id);
         $idShop = (int) $request->get('id_shop', $context->shop->id);
         $hookName = (string) $request->get('hook', '');
 
         $selected = $hookName !== '' ? LayoutPresetDataProvider::getByHook($hookName, $idLang, $idShop) : null;
+        $presets = LayoutPresetDataProvider::getAll($idLang, $idShop);
+        $catalog = LayoutCatalog::getAll();
+        $hooks = $this->getAvailableHooksList();
+        $contextPayload = [
+            'id_lang' => $idLang,
+            'id_shop' => $idShop,
+            'hook' => $hookName,
+        ];
+
+        if (!$request->isXmlHttpRequest() && $request->getRequestFormat() !== 'json') {
+            $catalogByKey = [];
+            foreach ($catalog as $preset) {
+                if (!isset($preset['key'])) {
+                    continue;
+                }
+                $catalogByKey[$preset['key']] = [
+                    'label' => $preset['label'] ?? $preset['key'],
+                    'description' => $preset['description'] ?? '',
+                ];
+            }
+
+            return $this->render('@Modules/prettyblocks/views/templates/admin/layout_presets.html.twig', [
+                'presets' => $presets,
+                'hooks' => $hooks,
+                'catalog' => $catalog,
+                'catalog_by_key' => $catalogByKey,
+                'context_data' => $contextPayload,
+                'selected' => $selected,
+                'save_url' => $this->generateUrl('prettyblocks_layout_presets_save'),
+                'delete_url' => $this->generateUrl('prettyblocks_layout_presets_delete'),
+                'page_title' => $translator->trans('Layout presets', [], 'Modules.Prettyblocks.Admin'),
+            ]);
+        }
 
         return (new JsonResponse())->setData([
             'layouts' => $this->getLayoutsFromRegisteredBlocks(),
-            'catalog' => LayoutCatalog::getAll(),
-            'presets' => LayoutPresetDataProvider::getAll($idLang, $idShop),
+            'catalog' => $catalog,
+            'presets' => $presets,
             'selected' => $selected,
-            'hooks' => $this->getAvailableHooksList(),
-            'context' => [
-                'id_lang' => $idLang,
-                'id_shop' => $idShop,
-                'hook' => $hookName,
-            ],
+            'hooks' => $hooks,
+            'context' => $contextPayload,
         ]);
     }
 
@@ -75,11 +105,80 @@ class AdminLayoutPresetController extends FrameworkBundleAdminController
 
         $result = LayoutPresetDataPersister::save($idLang, $idShop, $hookName, $preset);
 
+        if (!$request->isXmlHttpRequest() && $request->getRequestFormat() !== 'json') {
+            $this->addFlash(
+                $result ? 'success' : 'error',
+                $context->getTranslator()->trans(
+                    $result ? 'Layout preset saved successfully.' : 'Unable to save layout preset.',
+                    [],
+                    'Modules.Prettyblocks.Admin'
+                )
+            );
+
+            return $this->redirectToRoute('prettyblocks_layout_presets', [
+                'id_lang' => $idLang,
+                'id_shop' => $idShop,
+            ]);
+        }
+
         return (new JsonResponse())->setData([
             'success' => (bool) $result,
             'preset' => [
                 'hook' => $hookName,
                 'preset' => $preset,
+                'id_lang' => $idLang,
+                'id_shop' => $idShop,
+            ],
+        ]);
+    }
+
+    public function deleteLayoutPresetAction(Request $request)
+    {
+        $context = $this->get('prestashop.adapter.legacy.context')->getContext();
+        $idLang = (int) $request->get('id_lang', $context->language->id);
+        $idShop = (int) $request->get('id_shop', $context->shop->id);
+        $hookName = (string) $request->get('hook', '');
+
+        if ($hookName === '') {
+            $message = $context->getTranslator()->trans('Missing hook to delete.', [], 'Modules.Prettyblocks.Admin');
+            if (!$request->isXmlHttpRequest() && $request->getRequestFormat() !== 'json') {
+                $this->addFlash('error', $message);
+
+                return $this->redirectToRoute('prettyblocks_layout_presets', [
+                    'id_lang' => $idLang,
+                    'id_shop' => $idShop,
+                ]);
+            }
+
+            return (new JsonResponse())->setData([
+                'success' => false,
+                'message' => $message,
+            ]);
+        }
+
+        $result = LayoutPresetDataPersister::delete($idLang, $idShop, $hookName);
+
+        if (!$request->isXmlHttpRequest() && $request->getRequestFormat() !== 'json') {
+            $this->addFlash(
+                $result ? 'success' : 'error',
+                $context->getTranslator()->trans(
+                    $result ? 'Layout preset deleted.' : 'Unable to delete layout preset.',
+                    [],
+                    'Modules.Prettyblocks.Admin'
+                )
+            );
+
+            return $this->redirectToRoute('prettyblocks_layout_presets', [
+                'id_lang' => $idLang,
+                'id_shop' => $idShop,
+            ]);
+        }
+
+        return (new JsonResponse())->setData([
+            'success' => (bool) $result,
+            'deleted' => $result,
+            'context' => [
+                'hook' => $hookName,
                 'id_lang' => $idLang,
                 'id_shop' => $idShop,
             ],

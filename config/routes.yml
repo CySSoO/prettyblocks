@@ -29,3 +29,9 @@ prettyblocks_layout_presets_cancel:
   methods: [POST]
   defaults:
     _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController::cancelLayoutPreviewAction'
+
+prettyblocks_layout_presets_delete:
+  path: /modules/prettyblocks/layout_presets/delete
+  methods: [POST]
+  defaults:
+    _controller: 'PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController::deleteLayoutPresetAction'

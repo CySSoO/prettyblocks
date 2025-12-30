@@ -1,0 +1,93 @@
+{% extends '@PrestaShop/Admin/layout.html.twig' %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h3 class="card-header-title mb-0">{{ page_title }}</h3>
+          <span class="text-muted">{{ 'Manage the mapping between hooks and predefined layouts.'|trans({}, 'Modules.Prettyblocks.Admin') }}</span>
+        </div>
+        <div class="card-body">
+          <form method="post" action="{{ save_url }}" class="row g-3">
+            <input type="hidden" name="id_lang" value="{{ context_data.id_lang }}">
+            <input type="hidden" name="id_shop" value="{{ context_data.id_shop }}">
+
+            <div class="col-md-4">
+              <label class="form-label" for="layout-preset-hook">{{ 'Hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</label>
+              <select id="layout-preset-hook" name="hook" class="form-select" required>
+                <option value="">{{ 'Choose a hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</option>
+                {% for hook in hooks %}
+                  <option value="{{ hook.name }}" {% if context_data.hook is defined and hook.name == context_data.hook %}selected{% endif %}>
+                    {{ hook.title }} ({{ hook.name }})
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label" for="layout-preset-preset">{{ 'Preset'|trans({}, 'Modules.Prettyblocks.Admin') }}</label>
+              <select id="layout-preset-preset" name="preset" class="form-select" required>
+                <option value="">{{ 'Choose a preset'|trans({}, 'Modules.Prettyblocks.Admin') }}</option>
+                {% for preset in catalog %}
+                  <option value="{{ preset.key }}">{{ preset.label ?? preset.key }}</option>
+                {% endfor %}
+              </select>
+              <small class="form-text text-muted">{{ 'Select a layout preset to apply to the chosen hook.'|trans({}, 'Modules.Prettyblocks.Admin') }}</small>
+            </div>
+
+            <div class="col-md-4 d-flex align-items-end">
+              <button type="submit" class="btn btn-primary">{{ 'Save preset'|trans({}, 'Modules.Prettyblocks.Admin') }}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-3">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-header-title mb-0">{{ 'Existing presets'|trans({}, 'Modules.Prettyblocks.Admin') }}</h3>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive mb-0">
+            <table class="table mb-0">
+              <thead>
+                <tr>
+                  <th>{{ 'Hook'|trans({}, 'Modules.Prettyblocks.Admin') }}</th>
+                  <th>{{ 'Preset'|trans({}, 'Modules.Prettyblocks.Admin') }}</th>
+                  <th>{{ 'Description'|trans({}, 'Modules.Prettyblocks.Admin') }}</th>
+                  <th class="text-end">{{ 'Actions'|trans({}, 'Modules.Prettyblocks.Admin') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for preset in presets %}
+                  {% set presetMeta = catalog_by_key[preset.preset] ?? null %}
+                  <tr>
+                    <td class="align-middle">{{ preset.hook_name }}</td>
+                    <td class="align-middle">{{ presetMeta ? presetMeta.label : preset.preset }}</td>
+                    <td class="align-middle text-muted">{{ presetMeta ? presetMeta.description : '-' }}</td>
+                    <td class="text-end">
+                      <form method="post" action="{{ delete_url }}" class="d-inline">
+                        <input type="hidden" name="hook" value="{{ preset.hook_name }}">
+                        <input type="hidden" name="id_lang" value="{{ context_data.id_lang }}">
+                        <input type="hidden" name="id_shop" value="{{ context_data.id_shop }}">
+                        <button class="btn btn-outline-danger btn-sm" type="submit">{{ 'Delete'|trans({}, 'Modules.Prettyblocks.Admin') }}</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr>
+                    <td colspan="4" class="text-center text-muted py-4">{{ 'No presets have been saved yet.'|trans({}, 'Modules.Prettyblocks.Admin') }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
