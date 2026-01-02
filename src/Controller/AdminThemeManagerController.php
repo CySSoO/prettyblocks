@@ -372,6 +372,13 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
                 'get_pro' => $translator->trans('Get Pro Blocks', [], 'Modules.Prettyblocks.Admin'),
                 'search_zone' => $translator->trans('Search zone', [], 'Modules.Prettyblocks.Admin'),
                 'alert_message' => $translator->trans('Careful, %number% users are on this page.', ['%number%' => '{{ number }}'], 'Modules.Prettyblocks.Admin'),
+                'template_name_required' => $translator->trans('Please provide a template name.', [], 'Modules.Prettyblocks.Admin'),
+                'template_save_error' => $translator->trans('Unable to save this template.', [], 'Modules.Prettyblocks.Admin'),
+                'template_insert_error' => $translator->trans('Unable to insert this template.', [], 'Modules.Prettyblocks.Admin'),
+                'template_name_label' => $translator->trans('Template name', [], 'Modules.Prettyblocks.Admin'),
+                'template_name_placeholder' => $translator->trans('Homepage layout', [], 'Modules.Prettyblocks.Admin'),
+                'saved_layout_templates' => $translator->trans('Saved layouts', [], 'Modules.Prettyblocks.Admin'),
+                'no_saved_template' => $translator->trans('No saved template yet', [], 'Modules.Prettyblocks.Admin'),
             ],
             'security_app' => [
                 'ajax_token' => \Configuration::getGlobalValue('_PRETTYBLOCKS_TOKEN_'),

@@ -8,6 +8,7 @@ import Button from "./Button.vue";
 import { HttpClient } from "../services/HttpClient";
 import Block from "../scripts/block";
 import ZoneSelect from "./form/ZoneSelect.vue";
+import Input from "./form/Input.vue";
 import { storeToRefs } from 'pinia'
 /* Demo data */
 // import { v4 as uuidv4 } from 'uuid'
@@ -29,6 +30,7 @@ defineComponent({
   ButtonLight,
   Button,
   ZoneSelect,
+  Input,
 });
  let prettyBlocksContext = usePrettyBlocksContext();
 watch(() => prettyBlocksContext.currentZone, (currentZone) => {
@@ -175,6 +177,107 @@ const checkClipboardContent = async () => {
     showCopyZone.value = false;
   }
 };
+
+const templateName = ref('');
+const selectedTemplate = ref(null);
+const layoutTemplates = ref([]);
+const loadingTemplates = ref(false);
+
+const fetchLayoutTemplates = async () => {
+  loadingTemplates.value = true;
+  const context = prettyBlocksContext.psContext;
+  const params = {
+    action: "GetLayoutTemplates",
+    ajax_token: security_app.ajax_token,
+    ctx_id_lang: context.id_lang,
+    ctx_id_shop: context.id_shop,
+    ajax: true,
+  };
+
+  try {
+    const response = await HttpClient.get(ajax_urls.state, params);
+    layoutTemplates.value = response.templates || [];
+    if (layoutTemplates.value.length > 0 && !selectedTemplate.value) {
+      selectedTemplate.value = layoutTemplates.value[0].id_prettyblocks_layout_template;
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    loadingTemplates.value = false;
+  }
+};
+
+const saveLayoutTemplate = async () => {
+  if (loadingTemplates.value) {
+    return;
+  }
+
+  const name = templateName.value.trim();
+  if (!name) {
+    toaster.error(trans('template_name_required'));
+    return;
+  }
+
+  const context = prettyBlocksContext.psContext;
+  const params = {
+    action: "SaveLayoutTemplate",
+    zone: prettyBlocksContext.currentZone.name,
+    template_name: name,
+    ajax_token: security_app.ajax_token,
+    ctx_id_lang: context.id_lang,
+    ctx_id_shop: context.id_shop,
+    ajax: true,
+  };
+
+  try {
+    const response = await HttpClient.post(ajax_urls.state, params);
+    if (response.success) {
+      toaster.show(response.message);
+      templateName.value = '';
+      const templateId = response.template?.id_prettyblocks_layout_template || response.template?.id;
+      if (templateId) {
+        selectedTemplate.value = templateId;
+      }
+      await fetchLayoutTemplates();
+    } else {
+      toaster.error(response.message);
+    }
+  } catch (error) {
+    toaster.error(trans('template_save_error'));
+    console.error(error);
+  }
+};
+
+const insertLayoutTemplate = async () => {
+  if (loadingTemplates.value || !selectedTemplate.value) {
+    return;
+  }
+
+  const context = prettyBlocksContext.psContext;
+  const params = {
+    action: "InsertLayoutTemplate",
+    template_id: selectedTemplate.value,
+    zone: prettyBlocksContext.currentZone.name,
+    ajax_token: security_app.ajax_token,
+    ctx_id_lang: context.id_lang,
+    ctx_id_shop: context.id_shop,
+    ajax: true,
+  };
+
+  try {
+    const response = await HttpClient.post(ajax_urls.state, params);
+    if (response.success) {
+      toaster.show(response.message);
+      prettyBlocksContext.reloadIframe();
+      prettyBlocksContext.initStates();
+    } else {
+      toaster.error(response.message);
+    }
+  } catch (error) {
+    toaster.error(trans('template_insert_error'));
+    console.error(error);
+  }
+};
 /**
  * Delete all blocks in current zone
  */
@@ -205,6 +308,7 @@ const deleteAllBlocks = async () => {
 prettyBlocksContext.on('iframeLoaded', () => {
   setTimeout(() => {
     checkClipboardContent();
+    fetchLayoutTemplates();
   }, 1000);
 
 });
@@ -229,7 +333,40 @@ prettyBlocksContext.on('iframeLoaded', () => {
           </div>
         </div>
       </div>
-      
+
+      <div class="p-2 border-b border-gray-200 space-y-2">
+        <div class="flex items-end gap-2">
+          <div class="flex-1">
+            <Input :title="trans('template_name_label')" :placeholder="trans('template_name_placeholder')" v-model="templateName" />
+          </div>
+          <div class="pb-1">
+            <ButtonLight type="secondary" icon="BookmarkSquareIcon" @click="saveLayoutTemplate" size="6" />
+          </div>
+        </div>
+        <div class="flex items-end gap-2">
+          <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700">{{ trans('saved_layout_templates') }}</label>
+            <select
+              v-model="selectedTemplate"
+              class="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo focus:border-indigo sm:text-sm"
+              :disabled="loadingTemplates || layoutTemplates.length === 0"
+            >
+              <option v-if="layoutTemplates.length === 0" value="">{{ trans('no_saved_template') }}</option>
+              <option
+                v-for="template in layoutTemplates"
+                :key="template.id_prettyblocks_layout_template"
+                :value="template.id_prettyblocks_layout_template"
+              >
+                {{ template.name }}
+              </option>
+            </select>
+          </div>
+          <div class="pb-1">
+            <ButtonLight type="secondary" icon="ArrowDownTrayIcon" @click="insertLayoutTemplate" size="6" />
+          </div>
+        </div>
+      </div>
+
       <div class="overflow-y-auto flex-grow p-2 border-b border-gray-200">
         <!-- sortable component is used to sort by drag and drop -->
         <SortableList :items="groups" group="menu-group">

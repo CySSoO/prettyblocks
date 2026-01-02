@@ -72,7 +72,7 @@ class PrettyBlocks extends Module implements WidgetInterface
     {
         $this->name = 'prettyblocks';
         $this->tab = 'administration';
-        $this->version = '3.2.0';
+        $this->version = '3.2.1';
         $this->author = 'PrestaSafe';
         $this->need_instance = 1;
         $this->js_path = $this->_path . 'views/js/';
@@ -200,8 +200,18 @@ class PrettyBlocks extends Module implements WidgetInterface
             `date_upd` datetime DEFAULT NULL,
             `id_shop` int(11) DEFAULT NULL,
             `id_lang` int(11) DEFAULT NULL,
-            `state` longtext,          
+            `state` longtext,
             PRIMARY KEY (`id_prettyblocks`)
+          ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4;';
+        $db[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'prettyblocks_layout_template` (
+            `id_prettyblocks_layout_template` int(11) unsigned NOT NULL AUTO_INCREMENT,
+            `name` varchar(255) NOT NULL,
+            `zone_name` varchar(255) DEFAULT NULL,
+            `id_shop` int(11) DEFAULT NULL,
+            `id_lang` int(11) DEFAULT NULL,
+            `date_add` datetime DEFAULT NULL,
+            `date_upd` datetime DEFAULT NULL,
+            PRIMARY KEY (`id_prettyblocks_layout_template`)
           ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4;';
 
         $isOk = true;
@@ -259,6 +269,7 @@ class PrettyBlocks extends Module implements WidgetInterface
         $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_lang`';
         $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_settings`';
         $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_connected_employee`';
+        $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_layout_template`';
 
         $isOk = true;
         foreach ($db as $sql) {
