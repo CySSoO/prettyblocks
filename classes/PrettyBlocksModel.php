@@ -984,7 +984,7 @@ class PrettyBlocksModel extends ObjectModel
             $model->default_params = $row['default_params'] ?: json_encode(new stdClass());
             $model->template = $row['template'];
             $model->state = $row['state'] ?: json_encode(new stdClass());
-            $model->instance_id = $row['instance_id'];
+            $model->instance_id = uniqid();
             $model->id_shop = (int) $id_shop;
             $model->id_lang = (int) $id_lang;
             $model->position = ++$lastPosition;
