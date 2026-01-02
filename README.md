@@ -34,6 +34,13 @@ Téléchargez la [dernière release](https://github.com/PrestaSafe/prettyblocks/
 
 Vous pouvez également utiliser notre module ClassicBlocks, afin d'avoir 4 blocks à utiliser. Disponible ici: [Télécharger ClassicBlocks](https://github.com/PrestaSafe/classicblocks)
 
+### Gestion des templates de layout
+
+1. Enregistrez un layout depuis le panneau de gauche en lui donnant un nom.
+2. Ouvrez le **Layout manager** pour renommer, supprimer ou changer le hook de sauvegarde d'un template.
+3. Sélectionnez le hook cible (zone) avant d'injecter un template pour choisir où il sera déployé.
+4. Après chaque action (renommage, suppression, injection), la liste est rafraîchie automatiquement.
+
 ## Themes compatible
 
 Découvrez notre [Theme Optimisé SEO / Performance et mobile PrestaShop: CartZilla](https://www.prestasafe.com/product/theme-prestashop-cartzilla) compatible avec PrettyBlocks !

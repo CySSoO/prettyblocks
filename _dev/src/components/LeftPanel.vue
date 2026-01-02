@@ -182,6 +182,22 @@ const templateName = ref('');
 const selectedTemplate = ref(null);
 const layoutTemplates = ref([]);
 const loadingTemplates = ref(false);
+const layoutManagerOpen = ref(false);
+const selectedTemplateTargetZone = ref('');
+
+const availableZones = computed(() => prettyBlocksContext.zones || []);
+
+const getDefaultZoneName = () => {
+  if (prettyBlocksContext.currentZone?.name) {
+    return prettyBlocksContext.currentZone.name;
+  }
+
+  if (availableZones.value.length) {
+    return availableZones.value[0].name;
+  }
+
+  return '';
+};
 
 const fetchLayoutTemplates = async () => {
   loadingTemplates.value = true;
@@ -196,9 +212,16 @@ const fetchLayoutTemplates = async () => {
 
   try {
     const response = await HttpClient.get(ajax_urls.state, params);
-    layoutTemplates.value = response.templates || [];
+    layoutTemplates.value = (response.templates || []).map((template) => ({
+      ...template,
+      editingName: template.name,
+      targetZone: template.zone_name || getDefaultZoneName(),
+    }));
     if (layoutTemplates.value.length > 0 && !selectedTemplate.value) {
       selectedTemplate.value = layoutTemplates.value[0].id_prettyblocks_layout_template;
+    }
+    if (!selectedTemplateTargetZone.value) {
+      selectedTemplateTargetZone.value = getDefaultZoneName();
     }
   } catch (error) {
     console.error(error);
@@ -257,7 +280,7 @@ const insertLayoutTemplate = async () => {
   const params = {
     action: "InsertLayoutTemplate",
     template_id: selectedTemplate.value,
-    zone: prettyBlocksContext.currentZone.name,
+    zone: selectedTemplateTargetZone.value || prettyBlocksContext.currentZone.name,
     ajax_token: security_app.ajax_token,
     ctx_id_lang: context.id_lang,
     ctx_id_shop: context.id_shop,
@@ -278,6 +301,125 @@ const insertLayoutTemplate = async () => {
     console.error(error);
   }
 };
+
+const insertLayoutTemplateInto = async (template) => {
+  if (loadingTemplates.value || !template?.id_prettyblocks_layout_template) {
+    return;
+  }
+
+  const context = prettyBlocksContext.psContext;
+  const targetZone = template.targetZone || getDefaultZoneName();
+  const params = {
+    action: "InsertLayoutTemplate",
+    template_id: template.id_prettyblocks_layout_template,
+    zone: targetZone,
+    ajax_token: security_app.ajax_token,
+    ctx_id_lang: context.id_lang,
+    ctx_id_shop: context.id_shop,
+    ajax: true,
+  };
+
+  try {
+    const response = await HttpClient.post(ajax_urls.state, params);
+    if (response.success) {
+      toaster.show(response.message);
+      prettyBlocksContext.reloadIframe();
+      prettyBlocksContext.initStates();
+    } else {
+      toaster.error(response.message);
+    }
+  } catch (error) {
+    toaster.error(trans('template_insert_error'));
+    console.error(error);
+  }
+};
+
+const updateLayoutTemplate = async (template) => {
+  if (loadingTemplates.value || !template?.id_prettyblocks_layout_template) {
+    return;
+  }
+
+  const name = (template.editingName || '').trim();
+  if (!name) {
+    toaster.error(trans('template_name_required'));
+    return;
+  }
+
+  const context = prettyBlocksContext.psContext;
+  const params = {
+    action: "UpdateLayoutTemplate",
+    template_id: template.id_prettyblocks_layout_template,
+    template_name: name,
+    zone_name: template.zone_name || '',
+    ajax_token: security_app.ajax_token,
+    ctx_id_lang: context.id_lang,
+    ctx_id_shop: context.id_shop,
+    ajax: true,
+  };
+
+  try {
+    const response = await HttpClient.post(ajax_urls.state, params);
+    if (response.success) {
+      toaster.show(response.message || trans('template_updated'));
+      await fetchLayoutTemplates();
+    } else {
+      toaster.error(response.message || trans('template_update_error'));
+    }
+  } catch (error) {
+    toaster.error(trans('template_update_error'));
+    console.error(error);
+  }
+};
+
+const deleteLayoutTemplate = async (template) => {
+  if (!template?.id_prettyblocks_layout_template) {
+    return;
+  }
+
+  if (!confirm(trans('confirm_delete_template'))) {
+    return;
+  }
+
+  const context = prettyBlocksContext.psContext;
+  const params = {
+    action: "DeleteLayoutTemplate",
+    template_id: template.id_prettyblocks_layout_template,
+    ajax_token: security_app.ajax_token,
+    ctx_id_lang: context.id_lang,
+    ctx_id_shop: context.id_shop,
+    ajax: true,
+  };
+
+  try {
+    const response = await HttpClient.post(ajax_urls.state, params);
+    if (response.success) {
+      toaster.show(response.message || trans('template_deleted'));
+      await fetchLayoutTemplates();
+    } else {
+      toaster.error(response.message || trans('template_delete_error'));
+    }
+  } catch (error) {
+    toaster.error(trans('template_delete_error'));
+    console.error(error);
+  }
+};
+
+watch(availableZones, () => {
+  if (!selectedTemplateTargetZone.value) {
+    selectedTemplateTargetZone.value = getDefaultZoneName();
+  }
+
+  layoutTemplates.value = layoutTemplates.value.map((template) => ({
+    ...template,
+    targetZone: template.targetZone || getDefaultZoneName(),
+  }));
+});
+
+watch(() => prettyBlocksContext.currentZone?.name, (zoneName) => {
+  if (zoneName) {
+    selectedTemplateTargetZone.value = zoneName;
+  }
+});
 /**
  * Delete all blocks in current zone
  */
@@ -381,6 +523,70 @@ prettyBlocksContext.on('iframeLoaded', () => {
           </div>
           <div class="pb-1">
             <ButtonLight type="secondary" icon="ArrowDownTrayIcon" @click="insertLayoutTemplate" size="6" />
+          </div>
+        </div>
+        <div class="flex items-end gap-2">
+          <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700">{{ trans('target_hook_label') }}</label>
+            <select
+              v-model="selectedTemplateTargetZone"
+              class="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo focus:border-indigo sm:text-sm"
+            >
+              <option v-for="zone in availableZones" :key="zone.name" :value="zone.name">
+                {{ zone.alias || zone.name }}
+              </option>
+            </select>
+          </div>
+          <div class="pb-1 flex gap-1">
+            <ButtonLight type="secondary" icon="ArrowPathIcon" @click="fetchLayoutTemplates" size="6" :title="trans('refresh_templates')" />
+            <ButtonLight type="secondary" :icon="layoutManagerOpen ? 'ChevronUpIcon' : 'ChevronDownIcon'" @click="layoutManagerOpen = !layoutManagerOpen" size="6" :title="trans('layout_manager')" />
+          </div>
+        </div>
+      </div>
+
+      <div class="p-2 border-b border-gray-200" v-if="layoutManagerOpen">
+        <div class="flex items-center justify-between pb-2">
+          <h3 class="text-sm font-semibold text-gray-800">{{ trans('layout_manager') }}</h3>
+        </div>
+        <div v-if="loadingTemplates" class="text-sm text-gray-500">{{ trans('loading') }}...</div>
+        <div v-else-if="layoutTemplates.length === 0" class="text-sm text-gray-500">{{ trans('no_saved_template') }}</div>
+        <div v-else class="space-y-3">
+          <div
+            v-for="template in layoutTemplates"
+            :key="template.id_prettyblocks_layout_template"
+            class="rounded-md border border-gray-200 bg-white p-3 shadow-sm"
+          >
+            <div class="grid grid-cols-1 gap-2">
+              <Input :title="trans('template_name_label')" v-model="template.editingName" />
+              <div>
+                <label class="block text-sm font-medium text-gray-700">{{ trans('saved_zone_label') }}</label>
+                <select
+                  v-model="template.zone_name"
+                  class="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo focus:border-indigo sm:text-sm"
+                >
+                  <option value=""></option>
+                  <option v-for="zone in availableZones" :key="zone.name" :value="zone.name">
+                    {{ zone.alias || zone.name }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">{{ trans('target_hook_label') }}</label>
+                <select
+                  v-model="template.targetZone"
+                  class="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo focus:border-indigo sm:text-sm"
+                >
+                  <option v-for="zone in availableZones" :key="zone.name" :value="zone.name">
+                    {{ zone.alias || zone.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-2">
+              <ButtonLight type="secondary" icon="CheckCircleIcon" @click="updateLayoutTemplate(template)" :title="trans('rename_template')" />
+              <ButtonLight type="secondary" icon="ArrowDownTrayIcon" @click="insertLayoutTemplateInto(template)" :title="trans('inject_template')" />
+              <ButtonLight type="secondary" icon="TrashIcon" @click="deleteLayoutTemplate(template)" :title="trans('delete_template')" />
+            </div>
           </div>
         </div>
       </div>

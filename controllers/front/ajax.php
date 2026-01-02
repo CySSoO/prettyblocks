@@ -255,6 +255,76 @@ class PrettyBlocksAjaxModuleFrontController extends ModuleFrontController
         ]));
     }
 
+    public function displayAjaxUpdateLayoutTemplate()
+    {
+        $id_lang = (int) Tools::getValue('ctx_id_lang');
+        $id_shop = (int) Tools::getValue('ctx_id_shop');
+        $template_id = (int) Tools::getValue('template_id');
+        $template_name = trim((string) Tools::getValue('template_name'));
+        $zone_name = (string) Tools::getValue('zone_name', '');
+
+        $template = PrettyBlocksLayoutTemplate::findById($template_id, $id_lang, $id_shop);
+
+        if (!$template) {
+            exit(json_encode([
+                'success' => false,
+                'message' => $this->translator->trans('Template not found.', [], 'Modules.Prettyblocks.Admin'),
+            ]));
+        }
+
+        if (empty($template_name)) {
+            exit(json_encode([
+                'success' => false,
+                'message' => $this->translator->trans('Template name is required.', [], 'Modules.Prettyblocks.Admin'),
+            ]));
+        }
+
+        $success = PrettyBlocksLayoutTemplate::updateTemplate($template, $template_name, $zone_name, $id_lang, $id_shop);
+        $message = $this->translator->trans('Unable to update this template.', [], 'Modules.Prettyblocks.Admin');
+
+        if ($success) {
+            $message = $this->translator->trans('Template updated successfully.', [], 'Modules.Prettyblocks.Admin');
+        }
+
+        exit(json_encode([
+            'success' => (bool) $success,
+            'message' => $message,
+            'template' => [
+                'id_prettyblocks_layout_template' => (int) $template->id,
+                'name' => $template->name,
+                'zone_name' => $template->zone_name,
+            ],
+        ]));
+    }
+
+    public function displayAjaxDeleteLayoutTemplate()
+    {
+        $id_lang = (int) Tools::getValue('ctx_id_lang');
+        $id_shop = (int) Tools::getValue('ctx_id_shop');
+        $template_id = (int) Tools::getValue('template_id');
+
+        $template = PrettyBlocksLayoutTemplate::findById($template_id, $id_lang, $id_shop);
+
+        if (!$template) {
+            exit(json_encode([
+                'success' => false,
+                'message' => $this->translator->trans('Template not found.', [], 'Modules.Prettyblocks.Admin'),
+            ]));
+        }
+
+        $success = PrettyBlocksLayoutTemplate::deleteTemplate($template, $id_lang, $id_shop);
+        $message = $this->translator->trans('Unable to delete this template.', [], 'Modules.Prettyblocks.Admin');
+
+        if ($success) {
+            $message = $this->translator->trans('Template deleted successfully.', [], 'Modules.Prettyblocks.Admin');
+        }
+
+        exit(json_encode([
+            'success' => (bool) $success,
+            'message' => $message,
+        ]));
+    }
+
     /**
      * insert block on zone
      *

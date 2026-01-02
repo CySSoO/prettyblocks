@@ -65,6 +65,34 @@ class PrettyBlocksLayoutTemplate extends ObjectModel
         return $template;
     }
 
+    public static function updateTemplate(self $template, $name, $zoneName, $id_lang, $id_shop)
+    {
+        $template->name = $name;
+
+        if (!empty($zoneName)) {
+            $zoneName = pSQL($zoneName);
+
+            if ($template->zone_name !== $zoneName) {
+                PrettyBlocksModel::deleteBlocksFromZone($zoneName, $id_lang, $id_shop);
+                PrettyBlocksModel::copyZone($template->zone_name, $zoneName, $id_lang, $id_shop);
+                PrettyBlocksModel::deleteBlocksFromZone($template->zone_name, $id_lang, $id_shop);
+            }
+
+            $template->zone_name = $zoneName;
+        }
+
+        return $template->save();
+    }
+
+    public static function deleteTemplate(self $template, $id_lang, $id_shop)
+    {
+        if (!empty($template->zone_name)) {
+            PrettyBlocksModel::deleteBlocksFromZone($template->zone_name, $id_lang, $id_shop);
+        }
+
+        return (bool) $template->delete();
+    }
+
     public static function getTemplates($id_lang, $id_shop)
     {
         $query = new DbQuery();
