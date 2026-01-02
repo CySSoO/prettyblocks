@@ -268,16 +268,14 @@ class FieldCore
         // if value exists in DB and new_value is empty
         if (!is_null($this->value) && is_null($this->new_value)) {
             $date = \DateTime::createFromFormat($format, $this->value);
-            $timestamp = strtotime($this->value);
 
-            return $date ? $date->format($format) : date($format, $timestamp);
+            return $date ? $date->format($format) : date($format);
         }
         // if value doesn't exists in DB and new value is set
         if ($this->force_default_value && is_null($this->new_value)) {
             $date = \DateTime::createFromFormat($format, $this->default);
-            $timestamp = strtotime($this->value);
 
-            return $date ? $date->format($format) : date($format, $timestamp);
+            return $date ? $date->format($format) : date($format);
         }
 
         // Y-m-d\TH:i:s.u\Z is vuedatepicker default format
@@ -285,85 +283,8 @@ class FieldCore
         if (!$date) {
             $date = \DateTime::createFromFormat($format, $this->new_value);
         }
-        $timestamp = strtotime($this->value);
 
-        return $date ? $date->format($format) : date($format, $timestamp);
-    }
-
-    /**
-     * Normalize date field (Y-m-d).
-     *
-     * @return string
-     */
-    public function formatFieldDate()
-    {
-        $value = $this->getValueForFormatting();
-
-        return $this->normalizeDateValue($value, 'Y-m-d', [
-            'Y-m-d\TH:i:s.u\Z',
-            'Y-m-d\TH:i:s\Z',
-            'Y-m-d\TH:i:sP',
-            'Ymd',
-        ]);
-    }
-
-    /**
-     * Normalize datetime field (Y-m-d H:i:s).
-     *
-     * @return string
-     */
-    public function formatFieldDatetime()
-    {
-        $value = $this->getValueForFormatting();
-
-        return $this->normalizeDateValue($value, 'Y-m-d H:i:s', [
-            'Y-m-d\TH:i:s.u\Z',
-            'Y-m-d\TH:i:s\Z',
-            'Y-m-d\TH:i:sP',
-            \DateTime::ATOM,
-        ]);
-    }
-
-    /**
-     * Normalize number field.
-     *
-     * @return int|float|null
-     */
-    public function formatFieldNumber()
-    {
-        $value = $this->getValueForFormatting();
-
-        return $this->normalizeNumericValue($value);
-    }
-
-    /**
-     * Use the same backend normalization for the front-office rendering.
-     *
-     * @return string
-     */
-    public function formatFieldDateForFront()
-    {
-        return $this->formatFieldDate();
-    }
-
-    /**
-     * Use the same backend normalization for the front-office rendering.
-     *
-     * @return string
-     */
-    public function formatFieldDatetimeForFront()
-    {
-        return $this->formatFieldDatetime();
-    }
-
-    /**
-     * Use the same backend normalization for the front-office rendering.
-     *
-     * @return int|float|null
-     */
-    public function formatFieldNumberForFront()
-    {
-        return $this->formatFieldNumber();
+        return $date ? $date->format($format) : date($format);
     }
 
     /**
@@ -741,36 +662,42 @@ class FieldCore
      */
     public function formatFieldSelectorForFront()
     {
-        //Fix issue #287 : Issue loading a collection field due to a wrong primary key 
-        //We check in the field options if key "primary_key" exists use this value as third parameter of getCollection()
-        $primary_field = null;
-        if(array_key_exists('primary_key', $this->options)){
-            $primary_field = $this->options['primary_key'];
+        $value = $this->value;
+        $newValue = $this->new_value;
+        $default = $this->default;
+
+        // 🔹 Tenter de décoder si string JSON
+        foreach (['value','newValue','default'] as $varName) {
+            if (isset($$varName) && is_string($$varName)) {
+                $decoded = json_decode($$varName, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $$varName = $decoded;
+                }
+            }
         }
-        
+
         // if value exists in DB && new_value is empty
-        if (!is_null($this->value) && empty($this->new_value) && is_array($this->value) && isset($this->value['show']['id'])) {
-            $idCollection = (int) $this->value['show']['id'];
-
-            return $this->_getCollection($idCollection, $this->collection, $primary_field);
+        if (!is_null($value) && empty($newValue) && is_array($value) && isset($value['show']['id'])) {
+            $idCollection = (int) $value['show']['id'];
+            return $this->_getCollection($idCollection, $this->collection);
         }
-        // if value doesn't exists in DB and new value is set
-        if ($this->force_default_value && isset($this->default['show']['id']) && $this->new_value == '') {
-            $idCollection = (int) $this->default['show']['id'];
 
-            return $this->_getCollection($idCollection, $this->collection, $primary_field);
+        // if value doesn't exists in DB and new value is set
+        if ($this->force_default_value && $newValue == '' && is_array($default) && isset($default['show']['id'])) {
+            $idCollection = (int) $default['show']['id'];
+            return $this->_getCollection($idCollection, $this->collection);
         }
 
         // if value doesn't exists in DB and new value is set and force default value is false
-        if (is_array($this->new_value) && isset($this->new_value['show']['id'])) {
-            $idCollection = (int) $this->new_value['show']['id'];
-
-            return $this->_getCollection($idCollection, $this->collection, $primary_field);
+        if (is_array($newValue) && isset($newValue['show']['id'])) {
+            $idCollection = (int) $newValue['show']['id'];
+            return $this->_getCollection($idCollection, $this->collection);
         }
 
         // if no matches.
         return false;
     }
+
 
     /**
      * formatFieldSelector
@@ -838,167 +765,6 @@ class FieldCore
         ];
 
         return $secure;
-    }
-
-    /**
-     * Retrieve the value to normalize according to PrettyBlocks rules.
-     *
-     * @return mixed
-     */
-    protected function getValueForFormatting()
-    {
-        if (!is_null($this->value) && is_null($this->new_value)) {
-            return $this->value;
-        }
-
-        if ($this->force_default_value && is_null($this->new_value)) {
-            return $this->default;
-        }
-
-        return $this->new_value;
-    }
-
-    /**
-     * Normalize a date/datetime string.
-     *
-     * @param mixed  $value
-     * @param string $targetFormat
-     * @param array  $additionalFormats
-     *
-     * @return string
-     */
-    protected function normalizeDateValue($value, $targetFormat, array $additionalFormats = [])
-    {
-        if ($value instanceof \DateTimeInterface) {
-            return $value->format($targetFormat);
-        }
-
-        if (is_null($value)) {
-            return '';
-        }
-
-        if (is_int($value)) {
-            return date($targetFormat, $value);
-        }
-
-        if (is_string($value)) {
-            $value = trim($value);
-
-            if ($value === '') {
-                return '';
-            }
-
-            $zeroFormats = [
-                'Y-m-d' => '0000-00-00',
-                'Y-m-d H:i:s' => '0000-00-00 00:00:00',
-            ];
-
-            if (isset($zeroFormats[$targetFormat]) && $value === $zeroFormats[$targetFormat]) {
-                return $zeroFormats[$targetFormat];
-            }
-
-            $formats = array_unique(array_merge([$targetFormat], $additionalFormats));
-            foreach ($formats as $format) {
-                $date = \DateTime::createFromFormat($format, $value);
-                if ($date instanceof \DateTime) {
-                    return $date->format($targetFormat);
-                }
-            }
-
-            if (is_numeric($value)) {
-                $timestamp = (int) $value;
-
-                return date($targetFormat, $timestamp);
-            }
-
-            $timestamp = strtotime($value);
-            if ($timestamp !== false) {
-                return date($targetFormat, $timestamp);
-            }
-
-            return '';
-        }
-
-        if (is_numeric($value)) {
-            $timestamp = (int) $value;
-
-            return date($targetFormat, $timestamp);
-        }
-
-        return '';
-    }
-
-    /**
-     * Normalize numeric values.
-     *
-     * @param mixed $value
-     *
-     * @return int|float|null
-     */
-    protected function normalizeNumericValue($value)
-    {
-        if (is_null($value)) {
-            return null;
-        }
-
-        if (is_int($value) || is_float($value)) {
-            return $value;
-        }
-
-        if (is_bool($value)) {
-            return $value ? 1 : 0;
-        }
-
-        if (is_string($value)) {
-            $value = trim($value);
-
-            if ($value === '') {
-                return null;
-            }
-
-            $sanitized = filter_var($value, FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION | FILTER_FLAG_ALLOW_THOUSAND);
-            if ($sanitized === '' || $sanitized === null) {
-                return null;
-            }
-
-            $sanitized = str_replace(' ', '', $sanitized);
-            $hasComma = strpos($sanitized, ',') !== false;
-            $hasDot = strpos($sanitized, '.') !== false;
-
-            if ($hasComma && $hasDot) {
-                if (strrpos($sanitized, ',') > strrpos($sanitized, '.')) {
-                    $sanitized = str_replace('.', '', $sanitized);
-                    $sanitized = str_replace(',', '.', $sanitized);
-                } else {
-                    $sanitized = str_replace(',', '', $sanitized);
-                }
-            } elseif ($hasComma) {
-                if (substr_count($sanitized, ',') > 1) {
-                    $sanitized = str_replace(',', '', $sanitized);
-                } else {
-                    $decimalPart = substr($sanitized, strpos($sanitized, ',') + 1);
-                    if (strlen($decimalPart) === 3) {
-                        $sanitized = str_replace(',', '', $sanitized);
-                    } else {
-                        $sanitized = str_replace(',', '.', $sanitized);
-                    }
-                }
-            } elseif ($hasDot && substr_count($sanitized, '.') > 1) {
-                $sanitized = str_replace('.', '', $sanitized);
-            }
-
-            if (is_numeric($sanitized)) {
-                return $sanitized + 0;
-            }
-
-            return null;
-        }
-
-        if (is_numeric($value)) {
-            return $value + 0;
-        }
-
-        return null;
     }
 
     /**

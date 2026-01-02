@@ -23,12 +23,10 @@ namespace PrestaSafe\PrettyBlocks\Controller;
 // use Doctrine\Common\Cache\CacheProvider;
 use PrestaSafe\PrettyBlocks\DataPersister\ConnectedEmployeeDataPersister;
 use PrestaSafe\PrettyBlocks\DataProvider\ConnectedEmployeeDataProvider;
-use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 class AdminThemeManagerController extends FrameworkBundleAdminController
 {
@@ -208,23 +206,15 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
      */
     private function getSFUrl($route, $entity = 'sf')
     {
+
         $useDomain = version_compare(_PS_VERSION_, '9.0.0.0', '<');
 
-        try {
-            $url = \Link::getUrlSmarty([
-                'entity' => $entity,
-                'route' => $route,
-            ], true);
-        } catch (RouteNotFoundException $exception) {
-            return '';
-        }
+        $domain = $useDomain ? '' : \Tools::getShopDomainSsl(true);
 
-        // Si PS < 9, Link::getUrlSmarty() renvoie une URL relative => on ajoute le domaine
-        if ($useDomain) {
-            $url = \Tools::getShopDomainSsl(true) . $url;
-        }
-
-        return $url;
+        return $domain . \Link::getUrlSmarty([
+            'entity' => $entity,
+            'route' => $route,
+        ], true);
     }
 
     public function indexAction()
@@ -286,11 +276,6 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
         $ajax_editing_url = $this->getSFUrl('prettyblocks_get_connected_employees');
         $blockAvailableUrls = $this->getSFUrl('prettyblocks_api_get_blocks_available');
         $settingsUrls = $this->getSFUrl('prettyblocks_theme_settings');
-        $layoutPresetsUrl = $this->getSFUrl('prettyblocks_layout_presets');
-        $saveLayoutPresetUrl = $this->getSFUrl('prettyblocks_layout_presets_save');
-        $previewLayoutPresetUrl = $this->getSFUrl('prettyblocks_layout_presets_preview');
-        $confirmLayoutPreviewUrl = $this->getSFUrl('prettyblocks_layout_presets_confirm');
-        $cancelLayoutPreviewUrl = $this->getSFUrl('prettyblocks_layout_presets_cancel');
         $shop_url = $context->shop->getBaseUrl(true) . $this->getLangLink($context->language->id, $context, $context->shop->id);
         $translator = \Context::getContext()->getTranslator();
         $shops = $this->getShops();
@@ -350,11 +335,6 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
                 'startup_url' => $startup_url,
                 'prettyblocks_route_generator' => $this->getSFUrl('prettyblocks_route_generator'),
                 'ajax_editing_url' => $ajax_editing_url,
-                'layout_presets' => $layoutPresetsUrl,
-                'save_layout_preset' => $saveLayoutPresetUrl,
-                'preview_layout_preset' => $previewLayoutPresetUrl,
-                'confirm_layout_preview' => $confirmLayoutPreviewUrl,
-                'cancel_layout_preview' => $cancelLayoutPreviewUrl,
             ],
             'trans_app' => [
                 'current_shop' => $translator->trans('Shop in modification', [], 'Modules.Prettyblocks.Admin'),
@@ -370,8 +350,6 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
                 'bg_color' => $translator->trans('Background color', [], 'Modules.Prettyblocks.Admin'),
                 'ex_color' => $translator->trans('Add a color ex: #123456', [], 'Modules.Prettyblocks.Admin'),
                 'theme_settings' => $translator->trans('Theme settings', [], 'Modules.Prettyblocks.Admin'),
-                'layout_presets' => $translator->trans('Layout presets', [], 'Modules.Prettyblocks.Admin'),
-                'layout_presets_description' => $translator->trans('Choose which preset to apply for each hook, language and shop.', [], 'Modules.Prettyblocks.Admin'),
                 'type_search_here' => $translator->trans('Type your search here', [], 'Modules.Prettyblocks.Admin'),
                 'search_blocks' => $translator->trans('Search blocks', [], 'Modules.Prettyblocks.Admin'),
                 'is_cached' => $translator->trans('Enable cache', [], 'Modules.Prettyblocks.Admin'),
@@ -393,7 +371,6 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
                 'duplicate_state_error' => $translator->trans('An error occurred while duplicating the element', [], 'Modules.Prettyblocks.Admin'),
                 'get_pro' => $translator->trans('Get Pro Blocks', [], 'Modules.Prettyblocks.Admin'),
                 'search_zone' => $translator->trans('Search zone', [], 'Modules.Prettyblocks.Admin'),
-                'no_matching_zones' => $translator->trans('No zones match your search', [], 'Modules.Prettyblocks.Admin'),
                 'alert_message' => $translator->trans('Careful, %number% users are on this page.', ['%number%' => '{{ number }}'], 'Modules.Prettyblocks.Admin'),
             ],
             'security_app' => [
@@ -408,13 +385,6 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
 
             'session_token' => $session_token,
             'number_of_editors' => $number_of_editors,
-        ]);
-    }
-
-    public static function getSubscribedServices(): array
-    {
-        return array_merge(parent::getSubscribedServices(), [
-            'prestashop.adapter.legacy.context' => LegacyContext::class,
         ]);
     }
 

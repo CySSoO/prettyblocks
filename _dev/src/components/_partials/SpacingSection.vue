@@ -44,45 +44,36 @@
                 <!-- top Icons -->
                 <Icon name="ArrowUpIcon" class="h-5 w-5 inline" />
 
-                <Input
-                  :type="(props.modelValue[props.section_key][current_device].use_custom_data ?? false) ? 'text' : 'number'"
-                  v-bind="numericInputProps"
-                  :placeholder="trans('top')"
-                  v-model="props.modelValue[props.section_key][current_device].top"
-                />
+                <Input :type="
+              props.modelValue[props.section_key][current_device].use_custom_data ?? false
+                ? 'text'
+                : 'number'
+            " :placeholder="trans('top')" v-model="props.modelValue[props.section_key][current_device].top" />
             </div>
             <!-- Margin Right -->
             <div class="text-center">
                 <Icon name="ArrowRightIcon" class="h-5 w-5 inline" />
-                <Input
-                  :type="(props.modelValue[props.section_key][current_device].use_custom_data ?? false) ? 'text' : 'number'"
-                  v-bind="numericInputProps"
-                  :placeholder="trans('right')"
-                  v-model="props.modelValue[props.section_key][current_device].right"
-                  name="padding_right"
-                />
+                <Input :type="
+              props.modelValue[props.section_key][current_device].use_custom_data ?? false
+                ? 'text'
+                : 'number'
+            " :placeholder="trans('right')" v-model="props.modelValue[props.section_key][current_device].right" name="padding_right" />
             </div>
 
             <div class="text-center">
                 <Icon name="ArrowDownIcon" class="h-5 w-5 inline" />
-                <Input
-                  :type="(props.modelValue[props.section_key][current_device].use_custom_data ?? false) ? 'text' : 'number'"
-                  v-bind="numericInputProps"
-                  class="pr-1"
-                  :placeholder="trans('bottom')"
-                  v-model="props.modelValue[props.section_key][current_device].bottom"
-                  name="padding_bottom"
-                />
+                <Input :type="
+              props.modelValue[props.section_key][current_device].use_custom_data ?? false
+                ? 'text'
+                : 'number'
+            " class="pr-1" :placeholder="trans('bottom')" v-model="props.modelValue[props.section_key][current_device].bottom" name="padding_bottom" />
             </div>
             <div class="text-center">
                 <Icon name="ArrowLeftIcon" class="h-5 w-5 inline" />
-                <Input
-                  :type="(props.modelValue[props.section_key][current_device].use_custom_data ?? false) ? 'text' : 'number'"
-                  v-bind="numericInputProps"
-                  :placeholder="trans('left')"
-                  v-model="props.modelValue[props.section_key][current_device].left"
-                  name="padding_left"
-                />
+                <Input :type="
+              props.modelValue[props.section_key][current_device].use_custom_data ?? false
+                ? 'text'
+                : 'number' " :placeholder="trans('left')" v-model="props.modelValue[props.section_key][current_device].left" name="padding_left" />
             </div>
         </div>
 
@@ -102,7 +93,7 @@ import Checkbox from '../form/Checkbox.vue'
 import Title from '../Title.vue'
 import ColorInput from "vue-color-input";
 import emitter from "tiny-emitter/instance";
-import { ref, defineProps, watch, defineEmits, computed } from 'vue'
+import { ref, defineProps, watch, defineEmits } from 'vue'
 import { safePaddingsAndMargins } from "../../scripts/typings";
 import { usePrettyBlocksContext } from "../../store/pinia";
 import { storeToRefs } from "pinia";
@@ -161,23 +152,6 @@ watch(() => props.modelValue, (newValue) => {
 formatModelValue();
 
 const popover = ref(false);
-
-const spacingLimits = Object.freeze({
-  min: 0,
-  max: 12,
-  step: 1,
-})
-
-const numericInputProps = computed(() => {
-  const deviceSettings = props.modelValue[props.section_key][current_device.value] ?? {}
-  const useCustomData = deviceSettings.use_custom_data ?? false
-
-  if (useCustomData) {
-    return { min: null, max: null, step: null }
-  }
-
-  return spacingLimits
-})
 
 
 const changeDevice = (device) => {

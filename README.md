@@ -70,38 +70,6 @@ You can also add our module ClassicBlocks for having 4 blocks to use [Download C
 
 Discover our [PrestaShop SEO / Performance and Mobile Optimized Theme: CartZilla](https://www.prestasafe.com/product/theme-prestashop-cartzilla) compatible PrettyBlocks !
 
-## Prévisualisation des layouts
-
-Vous pouvez tester un preset de layout avant de l'appliquer définitivement sur un hook :
-
-1. Depuis l'UI Layouts, choisissez un preset et lancez la **prévisualisation**. Les blocs du preset sont instanciés avec un flag temporaire et rendus via `views/templates/front/zone.tpl` pour refléter le rendu final.
-2. Si le rendu vous convient, cliquez sur **Confirmer** : le flag temporaire est retiré et les blocs deviennent persistants dans la zone ciblée.
-3. Si vous souhaitez annuler, utilisez l'action **Annuler** qui supprime uniquement les blocs marqués comme temporaires sans toucher aux blocs existants.
-
-Ces actions permettent de préparer un layout sans impacter immédiatement le front-office et de valider les changements une fois la prévisualisation validée.
-
-### Hooks compatibles avec les presets
-
-Les presets fournis par défaut peuvent être appliqués sur les hooks suivants :
-
-* `displayHome`
-* `displayFooter`, `displayFooterBefore`, `displayFooterAfter`
-* `displayLeftColumn`, `displayRightColumn`
-
-### (Ré)activer les blocs par défaut
-
-Le paramètre **Remove default blocks** (`remove_default_blocks`) des réglages du module permet de désactiver tous les blocs livrés en standard si vous ne souhaitez conserver que vos blocs personnalisés. Désactivez ce paramètre pour réactiver les blocs par défaut ainsi que leur CSS/JS front-office.
-
-### Chargement des assets front (blocs par défaut)
-
-Lorsque les blocs par défaut sont actifs (c’est-à-dire si `remove_default_blocks` est désactivé), le hook `hookdisplayHeader` charge automatiquement :
-
-* la librairie **Tiny Slider** (CSS + JS) depuis un CDN ;
-* le JavaScript front du module (`views/js/front.js`) ;
-* la feuille de style front `views/css/dist/main.css`.
-
-Ces assets ne sont pas injectés si vous choisissez de supprimer les blocs par défaut.
-
 ## Top contributors 
 <p>Thanks to</p>
 <a href="https://github.com/PrestaSafe/prettyblocks/graphs/contributors">

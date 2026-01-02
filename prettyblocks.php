@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright (c) Since 2020 PrestaSafe and contributors
  *
@@ -43,24 +42,10 @@ class PrettyBlocks extends Module implements WidgetInterface
     public $form_trans = [];
     public $tabs = [
         [
-            'name' => 'PrettyBlocks',
-            'class_name' => 'AdminPrettyBlocks',
+            'name' => 'PrettyBlocks', // One name for all langs
+            'class_name' => 'AdminThemeManagerController',
             'visible' => true,
             'parent_class_name' => 'IMPROVE',
-        ],
-        [
-            'name' => 'Configuration',
-            'class_name' => 'AdminPrettyBlocksConfiguration',
-            'visible' => true,
-            'parent_class_name' => 'AdminPrettyBlocks',
-            'route_name' => 'admin_prettyblocks',
-        ],
-        [
-            'name' => 'Presets',
-            'class_name' => 'AdminPrettyBlocksPresets',
-            'visible' => true,
-            'parent_class_name' => 'AdminPrettyBlocks',
-            'route_name' => 'prettyblocks_layout_presets',
         ],
     ];
 
@@ -87,7 +72,7 @@ class PrettyBlocks extends Module implements WidgetInterface
     {
         $this->name = 'prettyblocks';
         $this->tab = 'administration';
-        $this->version = '3.2.1';
+        $this->version = '3.2.0';
         $this->author = 'PrestaSafe';
         $this->need_instance = 1;
         $this->js_path = $this->_path . 'views/js/';
@@ -208,10 +193,9 @@ class PrettyBlocks extends Module implements WidgetInterface
             `code` varchar(255) DEFAULT NULL,
             `template` longtext DEFAULT NULL,
             `default_params` longtext DEFAULT NULL,
-            `name` varchar(255) DEFAULT NULL,
+            `name` varchar(255) DEFAULT NULL,   
             `zone_name` varchar(255) DEFAULT NULL,
             `position` int(11) DEFAULT 0,
-            `is_temporary` TINYINT(1) NOT NULL DEFAULT 0,
             `date_add` datetime DEFAULT NULL,
             `date_upd` datetime DEFAULT NULL,
             `id_shop` int(11) DEFAULT NULL,
@@ -226,7 +210,6 @@ class PrettyBlocks extends Module implements WidgetInterface
         }
         $isOk &= $this->makeSettingsTable();
         $isOk &= $this->makeConnectedEmployee();
-        $isOk &= $this->makeLayoutPresetTable();
 
         return $isOk;
     }
@@ -246,23 +229,6 @@ class PrettyBlocks extends Module implements WidgetInterface
             `last_update` TIMESTAMP NOT NULL,
             PRIMARY KEY (`id_edit`)
             ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8;';
-
-        return Db::getInstance()->execute($sql);
-    }
-
-    public function makeLayoutPresetTable()
-    {
-        $sql = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'prettyblocks_layout_presets` (
-            `id_prettyblocks_layout_preset` int(11) unsigned NOT NULL AUTO_INCREMENT,
-            `id_lang` int(11) NOT NULL,
-            `id_shop` int(11) NOT NULL,
-            `hook_name` varchar(255) NOT NULL,
-            `preset` varchar(255) NOT NULL,
-            `date_add` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            `date_upd` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            UNIQUE KEY `hook_context` (`id_lang`,`id_shop`,`hook_name`),
-            PRIMARY KEY (`id_prettyblocks_layout_preset`)
-          ) ENGINE=' . _MYSQL_ENGINE_ . ' DEFAULT CHARSET=utf8mb4;';
 
         return Db::getInstance()->execute($sql);
     }
@@ -293,7 +259,6 @@ class PrettyBlocks extends Module implements WidgetInterface
         $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_lang`';
         $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_settings`';
         $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_connected_employee`';
-        $db[] = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'prettyblocks_layout_presets`';
 
         $isOk = true;
         foreach ($db as $sql) {
@@ -349,65 +314,13 @@ class PrettyBlocks extends Module implements WidgetInterface
         return parent::install()
             && $this->loadDefault()
             && $this->createBlockDb()
-            && $this->registerHook($this->hooks)
-            && $this->installTabs();
+            && $this->registerHook($this->hooks);
     }
 
     public function uninstall()
     {
         return parent::uninstall()
-            && $this->removeDb()
-            && $this->uninstallTabs();
-    }
-
-    private function installTabs(): bool
-    {
-        $languages = \Language::getLanguages(false);
-
-        foreach ($this->tabs as $tabData) {
-            $tabId = \Tab::getIdFromClassName($tabData['class_name']);
-            $tab = $tabId ? new \Tab($tabId) : new \Tab();
-
-            $tab->active = (bool) ($tabData['visible'] ?? true);
-            $tab->class_name = $tabData['class_name'];
-            $tab->id_parent = (int) \Tab::getIdFromClassName($tabData['parent_class_name']);
-            $tab->module = $this->name;
-            $tab->route_name = $tabData['route_name'] ?? '';
-
-            foreach ($languages as $language) {
-                $tab->name[(int) $language['id_lang']] = $tabData['name'];
-            }
-
-            if ($tabId) {
-                if (!$tab->update()) {
-                    return false;
-                }
-
-                continue;
-            }
-
-            if (!$tab->add()) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private function uninstallTabs(): bool
-    {
-        foreach ($this->tabs as $tabData) {
-            $tabId = \Tab::getIdFromClassName($tabData['class_name']);
-
-            if ($tabId) {
-                $tab = new \Tab($tabId);
-                if (!$tab->delete()) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+            && $this->removeDb();
     }
 
     public function hookActionFrontControllerSetVariables()
@@ -743,28 +656,61 @@ class PrettyBlocks extends Module implements WidgetInterface
      */
     public function renderZone($params)
     {
-        $zone_name = $params['zone_name'];
+        $zoneName = $params['zone_name'] ?? null;
+        if (empty($zoneName)) {
+            return false;
+        }
+
         $priority = $params['priority'] ?? false;
         $alias = $params['alias'] ?? '';
 
-        if (empty($zone_name)) {
-            return false;
-        }
         $templateFile = 'module:prettyblocks/views/templates/front/zone.tpl';
-        $context = Context::getContext();
 
-        $id_lang = $context->language->id;
-        $id_shop = $context->shop->id;
-        $blocks = PrettyBlocksModel::getInstanceByZone($zone_name, 'front', $id_lang, $id_shop);
+        // Désactive le cache quand on édite dans le builder
+        if (Tools::getValue('prettyblocks') === '1') {
+            return $this->renderZoneNoCache($zoneName, $priority, $alias, $templateFile);
+        }
+
+        $context = Context::getContext();
+        $idLang = (int)$context->language->id;
+        $idShop = (int)$context->shop->id;
+
+        // Cache unique par zone / shop / langue
+        $cacheId = $this->getCacheId(
+            'pbzone_' . md5($zoneName . '|' . $idLang . '|' . $idShop)
+        );
+
+        // Si cache existant → retour immédiat
+        if ($this->isCached($templateFile, $cacheId)) {
+            return $this->fetch($templateFile, $cacheId);
+        }
+
+        // Sinon → rendu normal, assignation Smarty et mise en cache
+        return $this->renderZoneNoCache($zoneName, $priority, $alias, $templateFile, $cacheId);
+    }
+
+
+    private function renderZoneNoCache($zoneName, $priority, $alias, $templateFile, $cacheId = null)
+    {
+        $context = Context::getContext();
+        $idLang = (int)$context->language->id;
+        $idShop = (int)$context->shop->id;
+
+        $blocks = PrettyBlocksModel::getInstanceByZone(
+            $zoneName,
+            'front',
+            $idLang,
+            $idShop
+        );
 
         $context->smarty->assign([
-            'zone_name' => $zone_name,
-            'priority' => $priority,
-            'alias' => $alias,
-            'blocks' => $blocks,
+            'zone_name' => $zoneName,
+            'priority'  => $priority,
+            'alias'     => $alias,
+            'blocks'    => $blocks,
         ]);
 
-        return $this->fetch($templateFile);
+        return $this->fetch($templateFile, $cacheId);
     }
 
     /**

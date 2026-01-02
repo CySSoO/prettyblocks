@@ -35,7 +35,7 @@ import '@vuepic/vue-datepicker/dist/main.css'
 import { v4 as uuidv4 } from 'uuid'
 
 // Vue
-import { defineComponent, defineProps, ref, defineEmits } from 'vue'
+import { defineComponent, defineProps, ref, defineEmits, onMounted } from 'vue'
 
 defineComponent({
   FormControl,
@@ -62,16 +62,7 @@ const VueQuillHTMLEditButton = {
 }
   
 const formatDateFromString = (date) => {
-  if (!date) {
-    return null
-  }
-
-  if (date instanceof Date) {
-    return date
-  }
-
-  const parsedDate = new Date(date)
-  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate
+  return new Date(date)
 }
 const props = defineProps({
   field: {
@@ -81,83 +72,6 @@ const props = defineProps({
 })
 let f = ref(props.field)
 const emit = defineEmits(['updateUpload'])
-
-const mergeFieldProps = (field, containers = []) => {
-  const merged = {}
-
-  containers.forEach((container) => {
-    const value = field && field[container]
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      Object.assign(merged, value)
-    }
-  })
-
-  return merged
-}
-
-const assignFromField = (target, field, keys = []) => {
-  if (!field) {
-    return target
-  }
-
-  keys.forEach((key) => {
-    const value = field[key]
-    if (value !== undefined && target[key] === undefined) {
-      target[key] = value
-    }
-  })
-
-  return target
-}
-
-const buildInputProps = () => {
-  const field = f.value
-  if (!field) {
-    return {}
-  }
-
-  const props = mergeFieldProps(field, ['inputProps', 'props', 'options'])
-
-  return assignFromField(props, field, ['min', 'max', 'step', 'autocomplete', 'inputmode', 'pattern'])
-}
-
-const buildDatePickerProps = (withTime = false) => {
-  const field = f.value
-  if (!field) {
-    return { enableTimePicker: withTime, monthNameFormat: 'short' }
-  }
-
-  const props = mergeFieldProps(field, ['datePickerProps', 'datepickerProps', 'pickerProps', 'props', 'options'])
-
-  assignFromField(props, field, [
-    'minDate',
-    'maxDate',
-    'enableTimePicker',
-    'is24',
-    'format',
-    'previewFormat',
-    'monthNameFormat',
-    'placeholder',
-    'locale',
-    'weekStart',
-    'weekNumbers',
-    'disabledDates',
-    'allowedDates',
-    'textInput',
-    'timePicker',
-    'dayNames'
-  ])
-
-  if (props.enableTimePicker === undefined) {
-    props.enableTimePicker = withTime
-  }
-
-  if (props.monthNameFormat === undefined) {
-    props.monthNameFormat = 'short'
-  }
-
-  return props
-}
 
 const updateUpload = () => {
   emit('updateUpload')
@@ -186,26 +100,7 @@ const toolbarOptions = [
   <div>
     <HeaderDropdown v-if="f.type == 'selector'" v-model="f.value" :title="f.label" :label="f.label"
       :collection="f.collection" :selector="f.selector" class="hidden md:block mb-2" />
-    <Input
-      class="my-4"
-      v-if="f.type == 'text'"
-      v-model="f.value"
-      :title="f.label"
-      :placeholder="f.placeholder ?? 'Entrez du texte'"
-      :input-props="buildInputProps()"
-    />
-    <Input
-      class="my-4"
-      v-if="f.type == 'number'"
-      v-model="f.value"
-      :title="f.label"
-      type="number"
-      :placeholder="f.placeholder"
-      :min="f.min ?? null"
-      :max="f.max ?? null"
-      :step="f.step ?? null"
-      :input-props="buildInputProps()"
-    />
+    <Input class="my-4" v-if="f.type == 'text'" v-model="f.value" :title="f.label" placeholder="Entrez du texte" />
     <div v-if="f.type == 'color'">
       {{ f.label }}
       <div class="flex mb-4 pt-4">
@@ -257,23 +152,10 @@ const toolbarOptions = [
       </FormControl>
     </div>
 
-    <div class="my-4" v-if="f.type == 'date' || f.type == 'datepicker'">
+    <div class="my-4" v-if="f.type == 'datepicker'">
       <Title :title="f.label" />
-      <VueDatePicker
-        :model-value="formatDateFromString(f.value)"
-        v-bind="buildDatePickerProps(false)"
-        @update:modelValue="f.value = $event"
-      />
-    </div>
-
-    <div class="my-4" v-if="f.type == 'datetime'">
-      <Title :title="f.label" />
-      <VueDatePicker
-        :model-value="formatDateFromString(f.value)"
-        v-bind="buildDatePickerProps(true)"
-        @update:modelValue="f.value = $event"
-      />
-    </div>
+      <VueDatePicker :model-value="formatDateFromString(f.value)" :enable-time-picker="false" month-name-format="short" @update:modelValue="f.value = $event" />
+    </div>  
 
     <div class="my-4" v-if="f.type == 'slider'">
         <Title :title="f.label" />

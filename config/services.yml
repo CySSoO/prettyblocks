@@ -3,20 +3,4 @@ services:
         class: PrestaSafe\PrettyBlocks\Command\ReleaseCommand
         tags:
             - { name: 'console.command' }
-
-    PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController:
-        class: PrestaSafe\PrettyBlocks\Controller\AdminThemeManagerController
-        public: true
-        autowire: true
-        autoconfigure: true
-        tags:
-            - 'controller.service_arguments'
-
-    PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController:
-        class: PrestaSafe\PrettyBlocks\Controller\AdminLayoutPresetController
-        public: true
-        autowire: true
-        autoconfigure: true
-        tags:
-            - 'controller.service_arguments'
-
+    
