@@ -980,10 +980,10 @@ class PrettyBlocksModel extends ObjectModel
             $model->zone_name = $zone_name_to_paste;
             $model->code = $row['code'];
             $model->name = $row['name'];
-            $model->config = $row['config'];
-            $model->default_params = $row['default_params'];
+            $model->config = $row['config'] ?: json_encode(new stdClass());
+            $model->default_params = $row['default_params'] ?: json_encode(new stdClass());
             $model->template = $row['template'];
-            $model->state = $row['state'];
+            $model->state = $row['state'] ?: json_encode(new stdClass());
             $model->instance_id = $row['instance_id'];
             $model->id_shop = (int) $id_shop;
             $model->id_lang = (int) $id_lang;
