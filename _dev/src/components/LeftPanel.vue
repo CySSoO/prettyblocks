@@ -323,13 +323,31 @@ prettyBlocksContext.on('iframeLoaded', () => {
             <ZoneSelect v-model="state" />
           </div>
           <div class="pl-2 mt-[6px]">
-            <ButtonLight type="secondary" icon="TrashIcon" @click="deleteAllBlocks" size="6"/>
+            <ButtonLight
+              type="secondary"
+              icon="TrashIcon"
+              @click="deleteAllBlocks"
+              size="6"
+              :title="trans('delete_zone_blocks')"
+            />
           </div>
           <div class="mt-[6px]">
-            <ButtonLight type="secondary" icon="Square2StackIcon" @click="copyZone" size="6"/>
+            <ButtonLight
+              type="secondary"
+              icon="Square2StackIcon"
+              @click="copyZone"
+              size="6"
+              :title="trans('copy_zone')"
+            />
           </div>
           <div class="mt-[6px]" v-if="showCopyZone">
-            <ButtonLight type="secondary" icon="ArrowDownOnSquareStackIcon" @click="pasteZone" size="6"/>
+            <ButtonLight
+              type="secondary"
+              icon="ArrowDownOnSquareStackIcon"
+              @click="pasteZone"
+              size="6"
+              :title="trans('paste_zone')"
+            />
           </div>
         </div>
       </div>
