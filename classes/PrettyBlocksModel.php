@@ -807,13 +807,14 @@ class PrettyBlocksModel extends ObjectModel
         $formatted['is_parent'] = true;
         $formatted['is_child'] = false;
         $formatted['need_reload'] = $block['need_reload'] ?? true;
-        $formatted['can_repeat'] = (isset($block['repeater'])) ? true : false;
+        $formatted['can_repeat'] = isset($block['repeater']);
         if (isset($block['repeater_db'])) {
             foreach ($block['repeater_db'] as $key => $data) {
                 $numeric = (int) $formatted['id_prettyblocks'] . '-' . $key;
-                $title = ($block['repeater']['name']) ? $block['repeater']['name'] : 'Element';
-                if (isset($block['repeater']['nameFrom'], $data[$block['repeater']['nameFrom']]['value'])) {
-                    $title = $data[$block['repeater']['nameFrom']]['value'];
+                $repeater = $block['repeater'] ?? [];
+                $title = (!empty($repeater['name'])) ? $repeater['name'] : 'Element';
+                if (isset($repeater['nameFrom'], $data[$repeater['nameFrom']]['value'])) {
+                    $title = $data[$repeater['nameFrom']]['value'];
                 }
                 $formatted['children'][] = [
                     'id' => $numeric,
