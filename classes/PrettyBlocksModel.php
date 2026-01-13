@@ -811,9 +811,14 @@ class PrettyBlocksModel extends ObjectModel
         if (isset($block['repeater_db'])) {
             foreach ($block['repeater_db'] as $key => $data) {
                 $numeric = (int) $formatted['id_prettyblocks'] . '-' . $key;
-                $repeater = $block['repeater'] ?? [];
+                $repeater = (isset($block['repeater']) && is_array($block['repeater'])) ? $block['repeater'] : [];
                 $title = (!empty($repeater['name'])) ? $repeater['name'] : 'Element';
-                if (isset($repeater['nameFrom'], $data[$repeater['nameFrom']]['value'])) {
+                if (!empty($repeater['nameFrom'])
+                    && is_array($data)
+                    && isset($data[$repeater['nameFrom']])
+                    && is_array($data[$repeater['nameFrom']])
+                    && isset($data[$repeater['nameFrom']]['value'])
+                ) {
                     $title = $data[$repeater['nameFrom']]['value'];
                 }
                 $formatted['children'][] = [

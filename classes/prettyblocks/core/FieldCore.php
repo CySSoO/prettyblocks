@@ -756,12 +756,15 @@ class FieldCore
      */
     public function secureCollectionEntry($array)
     {
+        if (!is_array($array) || !isset($array['show']) || !is_array($array['show'])) {
+            return [];
+        }
         $secure = [];
         $secure['show'] = [
-            'id' => (int) $array['show']['id'],
-            'primary' => (int) $array['show']['primary'],
-            'name' => $array['show']['name'],
-            'formatted' => $array['show']['formatted'],
+            'id' => (int) ($array['show']['id'] ?? 0),
+            'primary' => (int) ($array['show']['primary'] ?? 0),
+            'name' => $array['show']['name'] ?? '',
+            'formatted' => $array['show']['formatted'] ?? '',
         ];
 
         return $secure;
