@@ -568,28 +568,34 @@ class PrettyBlocks extends Module implements WidgetInterface
      */
     public function renderWidget($hookName = null, array $configuration = [])
     {
-        $vars = $this->getWidgetVariables($hookName, $configuration);
-        $this->smarty->assign($vars);
-        if (isset($configuration['zone_name'])) {
-            return $this->renderZone(['zone_name' => pSQL($configuration['zone_name'])]);
-        }
-        if (isset($configuration['action']) && $configuration['action'] == 'GetBlockRender') {
-            $block = $configuration['data'];
-            $vars = [
-                'id_prettyblocks' => $block['id_prettyblocks'],
-                'instance_id' => $block['instance_id'],
-                'state' => $block['repeater_db'],
-                'block' => $block,
-                'test' => Hook::exec('beforeRenderingBlock', ['state' => $configuration['data']], null, true),
-            ];
+        try {
+            $vars = $this->getWidgetVariables($hookName, $configuration);
             $this->smarty->assign($vars);
-            $template = $block['templates'][$block['templateSelected']] ?? 'module:prettyblocks/views/templates/blocks/welcome.tpl';
+            if (isset($configuration['zone_name'])) {
+                return $this->renderZone(['zone_name' => pSQL($configuration['zone_name'])]);
+            }
+            if (isset($configuration['action']) && $configuration['action'] == 'GetBlockRender') {
+                $block = $configuration['data'];
+                $vars = [
+                    'id_prettyblocks' => $block['id_prettyblocks'],
+                    'instance_id' => $block['instance_id'],
+                    'state' => $block['repeater_db'],
+                    'block' => $block,
+                    'test' => Hook::exec('beforeRenderingBlock', ['state' => $configuration['data']], null, true),
+                ];
+                $this->smarty->assign($vars);
+                $template = $block['templates'][$block['templateSelected']] ?? 'module:prettyblocks/views/templates/blocks/welcome.tpl';
 
-            return $this->fetch($template);
+                return $this->fetch($template);
+            }
+            if ($vars['hookName'] !== null) {
+                return $this->renderZone(['zone_name' => $vars['hookName']]);
+            }
+        } catch (\Throwable $error) {
+            $this->logRenderException('widget', $error);
         }
-        if ($vars['hookName'] !== null) {
-            return $this->renderZone(['zone_name' => $vars['hookName']]);
-        }
+
+        return '';
     }
 
     public function registerBlockToZone($zone_name, $block_code)
@@ -678,26 +684,32 @@ class PrettyBlocks extends Module implements WidgetInterface
         $templateFile = 'module:prettyblocks/views/templates/front/zone.tpl';
 
         // Désactive le cache quand on édite dans le builder
-        if (Tools::getValue('prettyblocks') === '1') {
-            return $this->renderZoneNoCache($zoneName, $priority, $alias, $templateFile);
+        try {
+            if (Tools::getValue('prettyblocks') === '1') {
+                return $this->renderZoneNoCache($zoneName, $priority, $alias, $templateFile);
+            }
+
+            $context = Context::getContext();
+            $idLang = (int)$context->language->id;
+            $idShop = (int)$context->shop->id;
+
+            // Cache unique par zone / shop / langue
+            $cacheId = $this->getCacheId(
+                'pbzone_' . md5($zoneName . '|' . $idLang . '|' . $idShop)
+            );
+
+            // Si cache existant → retour immédiat
+            if ($this->isCached($templateFile, $cacheId)) {
+                return $this->fetch($templateFile, $cacheId);
+            }
+
+            // Sinon → rendu normal, assignation Smarty et mise en cache
+            return $this->renderZoneNoCache($zoneName, $priority, $alias, $templateFile, $cacheId);
+        } catch (\Throwable $error) {
+            $this->logRenderException(sprintf('zone "%s"', $zoneName), $error);
         }
 
-        $context = Context::getContext();
-        $idLang = (int)$context->language->id;
-        $idShop = (int)$context->shop->id;
-
-        // Cache unique par zone / shop / langue
-        $cacheId = $this->getCacheId(
-            'pbzone_' . md5($zoneName . '|' . $idLang . '|' . $idShop)
-        );
-
-        // Si cache existant → retour immédiat
-        if ($this->isCached($templateFile, $cacheId)) {
-            return $this->fetch($templateFile, $cacheId);
-        }
-
-        // Sinon → rendu normal, assignation Smarty et mise en cache
-        return $this->renderZoneNoCache($zoneName, $priority, $alias, $templateFile, $cacheId);
+        return '';
     }
 
 
@@ -730,6 +742,14 @@ class PrettyBlocks extends Module implements WidgetInterface
         ]);
 
         return $this->fetch($templateFile, $cacheId);
+    }
+
+    private function logRenderException($context, \Throwable $error)
+    {
+        \PrestaShopLogger::addLog(
+            sprintf('PrettyBlocks %s rendering failed: %s', $context, $error->getMessage()),
+            3
+        );
     }
 
     /**
