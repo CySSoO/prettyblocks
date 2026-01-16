@@ -707,12 +707,20 @@ class PrettyBlocks extends Module implements WidgetInterface
         $idLang = (int)$context->language->id;
         $idShop = (int)$context->shop->id;
 
-        $blocks = PrettyBlocksModel::getInstanceByZone(
-            $zoneName,
-            'front',
-            $idLang,
-            $idShop
-        );
+        try {
+            $blocks = PrettyBlocksModel::getInstanceByZone(
+                $zoneName,
+                'front',
+                $idLang,
+                $idShop
+            );
+        } catch (\Throwable $error) {
+            \PrestaShopLogger::addLog(
+                sprintf('PrettyBlocks zone rendering failed for "%s": %s', $zoneName, $error->getMessage()),
+                3
+            );
+            $blocks = [];
+        }
 
         $context->smarty->assign([
             'zone_name' => $zoneName,
