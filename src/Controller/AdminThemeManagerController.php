@@ -241,28 +241,36 @@ class AdminThemeManagerController extends FrameworkBundleAdminController
         $css = [];
         $js_entry = '';
         if ($filesystem->exists($build_dir)) {
-            // load manifest.json
-            $manifest = $build_dir . '.vite/manifest.json';
+            try {
+                // load manifest.json
+                $manifest = $build_dir . '.vite/manifest.json';
 
-            if (!$filesystem->exists($manifest)) {
-                throw new \Exception('manifest.json not exist');
-            }
-            $json = \Tools::file_get_contents($manifest);
-            $json = json_decode($json, true);
+                if (!$filesystem->exists($manifest)) {
+                    throw new \Exception('manifest.json not exist');
+                }
+                $json = \Tools::file_get_contents($manifest);
+                $json = json_decode($json, true);
 
-            foreach ($json as $file) {
-                if (isset($file['file'])) {
-                    if (isset($file['isEntry']) && $file['isEntry']) {
-                        $js_entry = $build_dir_https . $file['file'];
-                    } else {
-                        $js[] = $build_dir_https . $file['file'];
+                foreach ($json as $file) {
+                    if (isset($file['file'])) {
+                        if (isset($file['isEntry']) && $file['isEntry']) {
+                            $js_entry = $build_dir_https . $file['file'];
+                        } else {
+                            $js[] = $build_dir_https . $file['file'];
+                        }
+                    }
+                    if (isset($file['css'])) {
+                        foreach ($file['css'] as $entry) {
+                            $css[] = $build_dir_https . $entry;
+                        }
                     }
                 }
-                if (isset($file['css'])) {
-                    foreach ($file['css'] as $entry) {
-                        $css[] = $build_dir_https . $entry;
-                    }
-                }
+            } catch (\Throwable $e) {
+                \PrestaShopLogger::addLog(
+                    sprintf('Prettyblocks: unable to load build manifest: %s', $e->getMessage()),
+                    3,
+                    (int) $e->getCode()
+                );
             }
         }
         $module = \Module::getInstanceByName('prettyblocks');
