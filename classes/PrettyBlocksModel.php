@@ -798,6 +798,7 @@ class PrettyBlocksModel extends ObjectModel
         $formatted['icon_path'] = $block['icon_path'] ?? '';
         $formatted['module'] = $block['code']; // todo register module name
         $formatted['title'] = $block['name'] ?? '';
+        $formatted['help'] = $block['help'] ?? $block['description'] ?? '';
         // dump($block);
 
         // if nameFrom params is present
