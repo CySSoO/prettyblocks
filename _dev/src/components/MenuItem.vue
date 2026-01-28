@@ -131,10 +131,11 @@ const highLightBlock = () => {
       
       <ButtonLight class="handle" v-if="props.config" icon="CogIcon" />
       <ButtonLight
-        v-if="!props.is_child && props.element.help"
+        v-if="!props.is_child"
         class="handle"
         icon="InformationCircleIcon"
         :title="trans('block_help')"
+        :disabled="!props.element.help"
         @click.prevent="openHelpModal"
       />
       <ButtonLight class="handle" v-if="props.is_child" @click.prevent="removeSubState" icon="TrashIcon" />
