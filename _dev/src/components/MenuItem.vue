@@ -130,23 +130,10 @@ const highLightBlock = () => {
       <!-- {{ props.is_child }} -->
       
       <ButtonLight class="handle" v-if="props.config" icon="CogIcon" />
-      <ButtonLight
-        v-if="!props.is_child && props.element.help"
-        class="handle"
-        icon="InformationCircleIcon"
-        :title="trans('block_help')"
-        @click.prevent="openHelpModal"
-      />
       <ButtonLight class="handle" v-if="props.is_child" @click.prevent="removeSubState" icon="TrashIcon" />
       <ButtonLight class="handle" v-if="!props.is_child" @click.prevent="removeState" icon="TrashIcon" />
       <ButtonLight v-if="!props.is_child" class="handle cursor-move" @click="openModal" icon="DocumentDuplicateIcon" />
       <LanguageModal v-if="showModal" :id_prettyblocks="props.element.id_prettyblocks" :languages="languages" @closeModal="closeModal" @selectLanguages="selectLanguages" />
-      <BlockHelpModal
-        v-if="showHelpModal"
-        :title="props.element.title"
-        :description="props.element.help"
-        @closeModal="closeHelpModal"
-      />
       <!-- <ButtonLight @click="disabled = !disabled" :icon="disabled ? 'EyeOffIcon' : 'EyeIcon'" /> -->
       <ButtonLight class="handle cursor-move" icon="ArrowsUpDownIcon" />
     </div>
@@ -155,13 +142,11 @@ const highLightBlock = () => {
 
 <script>
 import LanguageModal from '../components/LanguageModal.vue';
-import BlockHelpModal from '../components/BlockHelpModal.vue';
 
 export default {
   data() {
     return {
       showModal: false,
-      showHelpModal: false,
       selectedLanguages: [],
     };
   },
@@ -172,12 +157,6 @@ export default {
     closeModal() {
       this.showModal = false;
     },
-    openHelpModal() {
-      this.showHelpModal = true;
-    },
-    closeHelpModal() {
-      this.showHelpModal = false;
-    },
     selectLanguages(selectedLanguages) {
       this.selectedLanguages = selectedLanguages;
       this.showModal = false;
@@ -185,7 +164,6 @@ export default {
   },
   components: {
     LanguageModal,
-    BlockHelpModal,
   },
 };
 </script>

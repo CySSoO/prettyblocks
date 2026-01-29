@@ -112,16 +112,6 @@
         <target>Fermer</target>
         <note>Line: </note>
       </trans-unit>
-      <trans-unit id="8a9304e5a6b87e1f8fefc2b2b06d3065">
-        <source>Block help</source>
-        <target>Aide du block</target>
-        <note>Line: </note>
-      </trans-unit>
-      <trans-unit id="b117d09948f4d170ef850c239b8b4b16">
-        <source>Block usage</source>
-        <target>Fonctionnement du block</target>
-        <note>Line: </note>
-      </trans-unit>
       <trans-unit id="e4ac2669bad629dfde25316a15fc2ae2">
         <source>Current zone</source>
         <target>Zone en cours</target>
