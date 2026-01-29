@@ -205,9 +205,4 @@ export default {
   @apply w-auto;
 }
 
-.menu-item.selected > .menu-item-actions,
-.menu-item:focus-within > .menu-item-actions {
-  @apply w-auto;
-}
-
 </style>
