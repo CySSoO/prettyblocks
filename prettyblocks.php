@@ -352,13 +352,32 @@ class PrettyBlocks extends Module implements WidgetInterface
      */
     public function getWidgetVariables($hookName = null, array $configuration = [])
     {
-        $block = (isset($configuration['block'])) ? PrettyBlocksModel::loadBlock($configuration['block']) : [];
+        $useCache = Tools::getValue('prettyblocks') !== '1';
+        $cacheId = null;
 
-        return [
+        if ($useCache) {
+            $cachePayload = [
+                'hook' => $hookName,
+                'configuration' => $configuration,
+            ];
+            $cacheId = 'PrettyBlocks::getWidgetVariables|' . md5(json_encode($cachePayload));
+            if (Cache::isStored($cacheId)) {
+                return Cache::retrieve($cacheId);
+            }
+        }
+
+        $block = (isset($configuration['block'])) ? PrettyBlocksModel::loadBlock($configuration['block']) : [];
+        $vars = [
             'block' => $block,
             'hookName' => $hookName,
             'configuration_prettyblocks' => $configuration,
         ];
+
+        if ($useCache && $cacheId !== null) {
+            Cache::store($cacheId, $vars);
+        }
+
+        return $vars;
     }
 
     private function _addDynamicZones()
@@ -576,6 +595,24 @@ class PrettyBlocks extends Module implements WidgetInterface
             }
             if (isset($configuration['action']) && $configuration['action'] == 'GetBlockRender') {
                 $block = $configuration['data'];
+                $template = $block['templates'][$block['templateSelected']] ?? 'module:prettyblocks/views/templates/blocks/welcome.tpl';
+                $useCache = Tools::getValue('prettyblocks') !== '1';
+                $cacheId = null;
+
+                if ($useCache) {
+                    $context = Context::getContext();
+                    $cacheId = $this->getCacheId(sprintf(
+                        'pbwidget_%s_%s_%s_%s',
+                        $block['id_prettyblocks'] ?? '0',
+                        $block['instance_id'] ?? '0',
+                        (int) $context->language->id,
+                        (int) $context->shop->id
+                    ));
+                    if ($this->isCached($template, $cacheId)) {
+                        return $this->fetch($template, $cacheId);
+                    }
+                }
+
                 $vars = [
                     'id_prettyblocks' => $block['id_prettyblocks'],
                     'instance_id' => $block['instance_id'],
@@ -584,9 +621,8 @@ class PrettyBlocks extends Module implements WidgetInterface
                     'test' => Hook::exec('beforeRenderingBlock', ['state' => $configuration['data']], null, true),
                 ];
                 $this->smarty->assign($vars);
-                $template = $block['templates'][$block['templateSelected']] ?? 'module:prettyblocks/views/templates/blocks/welcome.tpl';
 
-                return $this->fetch($template);
+                return $this->fetch($template, $cacheId);
             }
             if ($vars['hookName'] !== null) {
                 return $this->renderZone(['zone_name' => $vars['hookName']]);
