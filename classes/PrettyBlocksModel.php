@@ -762,23 +762,32 @@ class PrettyBlocksModel extends ObjectModel
      */
     public static function getBlocksAvailable()
     {
-        $modules = Hook::exec('ActionRegisterBlock', $hook_args = [], $id_module = null, $array_return = true);
+        $context = Context::getContext();
+        $shop_id = ($context->shop) ? (int) $context->shop->id : 0;
+        $lang_id = ($context->language) ? (int) $context->language->id : 0;
+        $cache_id = 'PrettyBlocks::getBlocksAvailable_' . $shop_id . '_' . $lang_id;
 
-        $blocks = [];
-        foreach ($modules as $data) {
-            if (!isset($data[0])) {
-                $data[0] = $data;
-            }
-            foreach ($data as $block) {
-                if (!empty($block['code'])) {
-                    $blocks[$block['code']] = $block;
-                    // formatted for LeftPanel.vue
-                    $blocks[$block['code']]['formatted'] = self::formatBlock($block);
+        if (!Cache::isStored($cache_id)) {
+            $modules = Hook::exec('ActionRegisterBlock', $hook_args = [], $id_module = null, $array_return = true);
+
+            $blocks = [];
+            foreach ($modules as $data) {
+                if (!isset($data[0])) {
+                    $data[0] = $data;
+                }
+                foreach ($data as $block) {
+                    if (!empty($block['code'])) {
+                        $blocks[$block['code']] = $block;
+                        // formatted for LeftPanel.vue
+                        $blocks[$block['code']]['formatted'] = self::formatBlock($block);
+                    }
                 }
             }
+
+            Cache::store($cache_id, $blocks);
         }
 
-        return $blocks;
+        return Cache::retrieve($cache_id);
     }
 
     /**
