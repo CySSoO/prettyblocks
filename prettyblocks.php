@@ -568,6 +568,8 @@ class PrettyBlocks extends Module implements WidgetInterface
     public function renderWidget($hookName = null, array $configuration = [])
     {
         $context = $this->context;
+        $currencyId = isset($context->currency->id) ? (int) $context->currency->id : 0;
+        $groupId = isset($context->customer->id_default_group) ? (int) $context->customer->id_default_group : 0;
 
         // =========================
         // 1️⃣ ZONE DIRECTE
@@ -576,7 +578,9 @@ class PrettyBlocks extends Module implements WidgetInterface
             $cacheId = 'ps_widget_zone_'
                 . pSQL($configuration['zone_name']) . '_'
                 . (int) $context->language->id . '_'
-                . (int) $context->shop->id;
+                . (int) $context->shop->id . '_'
+                . $currencyId . '_'
+                . $groupId;
 
             if (\Cache::isStored($cacheId)) {
                 return (string) \Cache::retrieve($cacheId);
@@ -605,7 +609,9 @@ class PrettyBlocks extends Module implements WidgetInterface
                 . pSQL($block['instance_id']) . '_'
                 . pSQL($template) . '_'
                 . (int) $context->language->id . '_'
-                . (int) $context->shop->id;
+                . (int) $context->shop->id . '_'
+                . $currencyId . '_'
+                . $groupId;
 
             if (\Cache::isStored($cacheId)) {
                 return (string) \Cache::retrieve($cacheId);
@@ -642,7 +648,9 @@ class PrettyBlocks extends Module implements WidgetInterface
             $cacheId = 'ps_widget_hook_'
                 . pSQL($vars['hookName']) . '_'
                 . (int) $context->language->id . '_'
-                . (int) $context->shop->id;
+                . (int) $context->shop->id . '_'
+                . $currencyId . '_'
+                . $groupId;
 
             if (\Cache::isStored($cacheId)) {
                 return (string) \Cache::retrieve($cacheId);
@@ -750,6 +758,13 @@ class PrettyBlocks extends Module implements WidgetInterface
         $context = Context::getContext();
         $idLang = (int)$context->language->id;
         $idShop = (int)$context->shop->id;
+        $currencyId = isset($context->currency->id) ? (int) $context->currency->id : 0;
+        $groupId = isset($context->customer->id_default_group) ? (int) $context->customer->id_default_group : 0;
+
+        $psCacheId = 'pb_zone_html_' . md5($zoneName . '|' . $idLang . '|' . $idShop . '|' . $currencyId . '|' . $groupId);
+        if (\Cache::isStored($psCacheId)) {
+            return (string) \Cache::retrieve($psCacheId);
+        }
 
         // Cache unique par zone / shop / langue
         $cacheId = $this->getCacheId(
@@ -762,7 +777,10 @@ class PrettyBlocks extends Module implements WidgetInterface
         }
 
         // Sinon → rendu normal, assignation Smarty et mise en cache
-        return $this->renderZoneNoCache($zoneName, $priority, $alias, $templateFile, $cacheId);
+        $html = $this->renderZoneNoCache($zoneName, $priority, $alias, $templateFile, $cacheId);
+        \Cache::store($psCacheId, $html);
+
+        return $html;
     }
 
 
