@@ -114,8 +114,18 @@ class PrettyBlocksModel extends ObjectModel
      */
     public function delete()
     {
-        return parent::delete()
+        $zoneName = $this->zone_name;
+        $idLang = $this->id_lang;
+        $idShop = $this->id_shop;
+
+        $result = parent::delete()
             && $this->removeConfig();
+
+        if ($result) {
+            self::clearZonePresentedCache($zoneName, $idLang, $idShop);
+        }
+
+        return $result;
     }
 
     /**
@@ -169,29 +179,57 @@ class PrettyBlocksModel extends ObjectModel
         $id_lang = (!is_null($id_lang)) ? (int) $id_lang : $contextPS->language->id;
         $id_shop = (!is_null($id_shop)) ? (int) $id_shop : $contextPS->shop->id;
 
+        $blocks = [];
         if ($context === 'front' && Tools::getValue('prettyblocks') !== '1') {
-            $cacheId = 'pb_zone_' . pSQL($zone_name) . '_' . $id_lang . '_' . $id_shop;
+            $cacheId = self::getZonePresentedCacheId($zone_name, $id_lang, $id_shop);
             if (\Cache::isStored($cacheId)) {
                 $cached = \Cache::retrieve($cacheId);
                 return is_array($cached) ? $cached : [];
             }
         }
 
-        $psc = new PrestaShopCollection('PrettyBlocksModel', $id_lang);
+        if ($context === 'front') {
+            $query = new DbQuery();
+            $query->select('id_prettyblocks, instance_id, code, name, config, default_params, template, state, zone_name, position, id_shop, id_lang');
+            $query->from('prettyblocks');
+            $query->where('zone_name = \'' . pSQL($zone_name) . '\'');
+            $query->where('id_shop = ' . (int) $id_shop);
+            $query->where('id_lang = ' . (int) $id_lang);
+            $query->orderBy('position');
+            $results = Db::getInstance()->executeS($query);
 
-        $psc->where('zone_name', '=', $zone_name);
-        $psc->where('id_shop', '=', (int) $id_shop);
-        $psc->where('id_lang', '=', (int) $id_lang);
+            foreach ($results as $row) {
+                $model = new PrettyBlocksModel();
+                $model->id_prettyblocks = (int) $row['id_prettyblocks'];
+                $model->id = (int) $row['id_prettyblocks'];
+                $model->instance_id = $row['instance_id'];
+                $model->code = $row['code'];
+                $model->name = $row['name'];
+                $model->config = $row['config'];
+                $model->default_params = $row['default_params'];
+                $model->template = $row['template'];
+                $model->state = $row['state'];
+                $model->zone_name = $row['zone_name'];
+                $model->position = (int) $row['position'];
+                $model->id_shop = (int) $row['id_shop'];
+                $model->id_lang = (int) $row['id_lang'];
 
-        $psc->orderBy('position');
-        $blocks = [];
-        foreach ($psc->getResults() as $res) {
-            if ($res) {
-                $block = $res->mergeStateWithFields();
-                if ($context == 'front') {
-                    $block = (new BlockPresenter())->present($res->mergeStateWithFields($id_lang));
-                }
+                $block = (new BlockPresenter())->present($model->mergeStateWithFields());
                 $blocks[] = $block;
+            }
+        } else {
+            $psc = new PrestaShopCollection('PrettyBlocksModel', $id_lang);
+
+            $psc->where('zone_name', '=', $zone_name);
+            $psc->where('id_shop', '=', (int) $id_shop);
+            $psc->where('id_lang', '=', (int) $id_lang);
+
+            $psc->orderBy('position');
+            foreach ($psc->getResults() as $res) {
+                if ($res) {
+                    $block = $res->mergeStateWithFields();
+                    $blocks[] = $block;
+                }
             }
         }
 
@@ -493,7 +531,7 @@ class PrettyBlocksModel extends ObjectModel
      *
      * @param string
      *
-     * @return void
+     * @return bool
      */
     public function setCurrentTemplate($tpl)
     {
@@ -967,6 +1005,24 @@ class PrettyBlocksModel extends ObjectModel
             . (int) $removeDefault;
     }
 
+    private static function getZonePresentedCacheId($zone_name, $id_lang, $id_shop)
+    {
+        return 'pb_zone_presented_'
+            . pSQL($zone_name) . '_'
+            . (int) $id_lang . '_'
+            . (int) $id_shop;
+    }
+
+    private static function clearZonePresentedCache($zone_name, $id_lang, $id_shop)
+    {
+        if ($zone_name === null || $zone_name === '') {
+            return;
+        }
+
+        $cacheId = self::getZonePresentedCacheId($zone_name, $id_lang, $id_shop);
+        self::deleteCacheEntry($cacheId);
+    }
+
     private static function clearBlocksAvailableCache($idShop = null, $idLang = null)
     {
         $context = Context::getContext();
@@ -1127,7 +1183,47 @@ class PrettyBlocksModel extends ObjectModel
     public function add($auto_date = true, $null_values = false)
     {
         $this->position = (int) DB::getInstance()->getValue('SELECT MAX(position)  FROM `' . _DB_PREFIX_ . 'prettyblocks`') + 1;
-        parent::add();
+        $result = parent::add($auto_date, $null_values);
+
+        if ($result) {
+            self::clearZonePresentedCache($this->zone_name, $this->id_lang, $this->id_shop);
+        }
+
+        return $result;
+    }
+
+    /**
+     * override update method
+     *
+     * @param bool $null_values
+     *
+     * @return bool
+     */
+    public function update($null_values = false)
+    {
+        $previous = null;
+        if (!empty($this->id_prettyblocks)) {
+            $query = new DbQuery();
+            $query->select('zone_name, id_lang, id_shop')
+                ->from('prettyblocks')
+                ->where('id_prettyblocks = ' . (int) $this->id_prettyblocks);
+            $previous = Db::getInstance()->getRow($query);
+        }
+
+        $result = parent::update($null_values);
+
+        if ($result) {
+            self::clearZonePresentedCache($this->zone_name, $this->id_lang, $this->id_shop);
+            if ($previous && (
+                $previous['zone_name'] !== $this->zone_name
+                || (int) $previous['id_lang'] !== (int) $this->id_lang
+                || (int) $previous['id_shop'] !== (int) $this->id_shop
+            )) {
+                self::clearZonePresentedCache($previous['zone_name'], (int) $previous['id_lang'], (int) $previous['id_shop']);
+            }
+        }
+
+        return $result;
     }
 
     /**
