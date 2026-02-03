@@ -168,6 +168,15 @@ class PrettyBlocksModel extends ObjectModel
 
         $id_lang = (!is_null($id_lang)) ? (int) $id_lang : $contextPS->language->id;
         $id_shop = (!is_null($id_shop)) ? (int) $id_shop : $contextPS->shop->id;
+
+        if ($context === 'front' && Tools::getValue('prettyblocks') !== '1') {
+            $cacheId = 'pb_zone_' . pSQL($zone_name) . '_' . $id_lang . '_' . $id_shop;
+            if (\Cache::isStored($cacheId)) {
+                $cached = \Cache::retrieve($cacheId);
+                return is_array($cached) ? $cached : [];
+            }
+        }
+
         $psc = new PrestaShopCollection('PrettyBlocksModel', $id_lang);
 
         $psc->where('zone_name', '=', $zone_name);
@@ -184,6 +193,10 @@ class PrettyBlocksModel extends ObjectModel
                 }
                 $blocks[] = $block;
             }
+        }
+
+        if ($context === 'front' && Tools::getValue('prettyblocks') !== '1') {
+            \Cache::store($cacheId, $blocks);
         }
 
         return $blocks;
