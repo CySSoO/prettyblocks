@@ -77,34 +77,9 @@ class PrettyBlocksModel extends ObjectModel
      */
     public static function loadBlock($code)
     {
-        if (empty($code)) {
-            return [];
-        }
-
-        // ❌ Pas de cache en mode édition PrettyBlocks
-        if (Tools::getValue('prettyblocks') === '1') {
-            $blocks = self::getBlocksAvailable();
-            return $blocks[$code] ?? [];
-        }
-
-        $context = Context::getContext();
-
-        $cacheId = 'pb_block_'
-            . pSQL($code) . '_'
-            . (int) $context->shop->id . '_'
-            . (int) $context->language->id;
-
-        if (\Cache::isStored($cacheId)) {
-            $cached = \Cache::retrieve($cacheId);
-            return is_array($cached) ? $cached : [];
-        }
-
         $blocks = self::getBlocksAvailable();
-        $block  = $blocks[$code] ?? [];
 
-        \Cache::store($cacheId, $block);
-
-        return $block;
+        return (isset($blocks[$code])) ? $blocks[$code] : [];
     }
 
     /**
@@ -787,23 +762,32 @@ class PrettyBlocksModel extends ObjectModel
      */
     public static function getBlocksAvailable()
     {
-        $modules = Hook::exec('ActionRegisterBlock', $hook_args = [], $id_module = null, $array_return = true);
+        $context = Context::getContext();
+        $shop_id = ($context->shop) ? (int) $context->shop->id : 0;
+        $lang_id = ($context->language) ? (int) $context->language->id : 0;
+        $cache_id = 'PrettyBlocks::getBlocksAvailable_' . $shop_id . '_' . $lang_id;
 
-        $blocks = [];
-        foreach ($modules as $data) {
-            if (!isset($data[0])) {
-                $data[0] = $data;
-            }
-            foreach ($data as $block) {
-                if (!empty($block['code'])) {
-                    $blocks[$block['code']] = $block;
-                    // formatted for LeftPanel.vue
-                    $blocks[$block['code']]['formatted'] = self::formatBlock($block);
+        if (!Cache::isStored($cache_id)) {
+            $modules = Hook::exec('ActionRegisterBlock', $hook_args = [], $id_module = null, $array_return = true);
+
+            $blocks = [];
+            foreach ($modules as $data) {
+                if (!isset($data[0])) {
+                    $data[0] = $data;
+                }
+                foreach ($data as $block) {
+                    if (!empty($block['code'])) {
+                        $blocks[$block['code']] = $block;
+                        // formatted for LeftPanel.vue
+                        $blocks[$block['code']]['formatted'] = self::formatBlock($block);
+                    }
                 }
             }
+
+            Cache::store($cache_id, $blocks);
         }
 
-        return $blocks;
+        return Cache::retrieve($cache_id);
     }
 
     /**
@@ -832,13 +816,19 @@ class PrettyBlocksModel extends ObjectModel
         $formatted['is_parent'] = true;
         $formatted['is_child'] = false;
         $formatted['need_reload'] = $block['need_reload'] ?? true;
-        $formatted['can_repeat'] = (isset($block['repeater'])) ? true : false;
+        $formatted['can_repeat'] = isset($block['repeater']);
         if (isset($block['repeater_db'])) {
             foreach ($block['repeater_db'] as $key => $data) {
                 $numeric = (int) $formatted['id_prettyblocks'] . '-' . $key;
-                $title = ($block['repeater']['name']) ? $block['repeater']['name'] : 'Element';
-                if (isset($block['repeater']['nameFrom'], $data[$block['repeater']['nameFrom']]['value'])) {
-                    $title = $data[$block['repeater']['nameFrom']]['value'];
+                $repeater = (isset($block['repeater']) && is_array($block['repeater'])) ? $block['repeater'] : [];
+                $title = (!empty($repeater['name'])) ? $repeater['name'] : 'Element';
+                if (!empty($repeater['nameFrom'])
+                    && is_array($data)
+                    && isset($data[$repeater['nameFrom']])
+                    && is_array($data[$repeater['nameFrom']])
+                    && isset($data[$repeater['nameFrom']]['value'])
+                ) {
+                    $title = $data[$repeater['nameFrom']]['value'];
                 }
                 $formatted['children'][] = [
                     'id' => $numeric,
