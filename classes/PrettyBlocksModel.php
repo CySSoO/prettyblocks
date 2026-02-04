@@ -480,12 +480,7 @@ class PrettyBlocksModel extends ObjectModel
         $this->setCurrentTemplate($template_name);
         $this->setDefaultParams($stateRequest['default']);
 
-        $saved = $this->save();
-        if ($saved) {
-            self::clearBlocksAvailableCache($this->id_shop, $this->id_lang);
-        }
-
-        return $saved;
+        return $this->save();
     }
 
     /**
@@ -805,17 +800,6 @@ class PrettyBlocksModel extends ObjectModel
      */
     public static function getBlocksAvailable()
     {
-        $context = Context::getContext();
-        $idShop = (int) $context->shop->id;
-        $idLang = (int) $context->language->id;
-        $removeDefault = (int) TplSettings::getSettings('remove_default_blocks', false);
-        $cacheId = self::getBlocksAvailableCacheId($idShop, $idLang, $removeDefault);
-
-        if (\Cache::isStored($cacheId)) {
-            $cached = \Cache::retrieve($cacheId);
-            return is_array($cached) ? $cached : [];
-        }
-
         $modules = Hook::exec('ActionRegisterBlock', $hook_args = [], $id_module = null, $array_return = true);
 
         $blocks = [];
@@ -831,8 +815,6 @@ class PrettyBlocksModel extends ObjectModel
                 }
             }
         }
-
-        \Cache::store($cacheId, $blocks);
 
         return $blocks;
     }
@@ -954,41 +936,7 @@ class PrettyBlocksModel extends ObjectModel
             $model->save();
         }
 
-        self::clearBlocksAvailableCache($id_shop, $id_lang);
-
         return $block;
-    }
-
-    private static function getBlocksAvailableCacheId($idShop, $idLang, $removeDefault)
-    {
-        return 'pb_blocks_available_'
-            . (int) $idShop . '_'
-            . (int) $idLang . '_'
-            . (int) $removeDefault;
-    }
-
-    private static function clearBlocksAvailableCache($idShop = null, $idLang = null)
-    {
-        $context = Context::getContext();
-        $idShop = ($idShop !== null) ? (int) $idShop : (int) $context->shop->id;
-        $idLang = ($idLang !== null) ? (int) $idLang : (int) $context->language->id;
-
-        foreach ([0, 1] as $removeDefault) {
-            $cacheId = self::getBlocksAvailableCacheId($idShop, $idLang, $removeDefault);
-            self::deleteCacheEntry($cacheId);
-        }
-    }
-
-    private static function deleteCacheEntry($cacheId)
-    {
-        if (method_exists('Cache', 'delete')) {
-            \Cache::delete($cacheId);
-            return;
-        }
-
-        if (method_exists('Cache', 'clean')) {
-            \Cache::clean($cacheId);
-        }
     }
 
     /**
